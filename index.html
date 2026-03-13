@@ -578,17 +578,17 @@ footer {
       </div>
       <div class="topic-step">
         <div class="topic-step-num">D3</div>
-        <div class="topic-step-title">Exploitation &amp; Metasploit</div>
+        <div class="topic-step-title">Android APK Reverse Engineering</div>
         <div class="topic-step-arrow"></div>
       </div>
       <div class="topic-step">
         <div class="topic-step-num">D4</div>
-        <div class="topic-step-title">Web App Security &amp; Burp Suite</div>
+        <div class="topic-step-title">Mobile API Security &amp; Traffic Analysis</div>
         <div class="topic-step-arrow"></div>
       </div>
       <div class="topic-step">
         <div class="topic-step-num">D5</div>
-        <div class="topic-step-title">SOC Operations &amp; Incident Response</div>
+        <div class="topic-step-title">CTF — Crypto, Forensics, Web, Binary</div>
         <div class="topic-step-arrow"></div>
       </div>
     </div>
@@ -648,15 +648,15 @@ footer {
       <a class="day-card red reveal reveal-delay-1" href="day-3.html">
         <div class="day-card-top">
           <div class="day-number">03</div>
-          <span class="day-badge red">EXPLOITATION</span>
+          <span class="day-badge red">APK SECURITY</span>
         </div>
-        <div class="day-card-title">Exploitation &amp; Metasploit Framework</div>
-        <div class="day-card-desc">Hands-on exploitation using Metasploit against Metasploitable targets. Covering payload selection, session management, privilege escalation, and post-exploitation techniques.</div>
+        <div class="day-card-title">Android APK Reverse Engineering &amp; Tamper Testing</div>
+        <div class="day-card-desc">8-phase controlled assessment of InsecureBankv2.apk — decompilation, hardcoded AES key extraction, SMS password exfiltration, authentication bypass via Smali modification, and OWASP Mobile Top 10 risk mapping.</div>
         <div class="day-topics">
-          <div class="day-topic">Metasploit Modules &amp; Payloads</div>
-          <div class="day-topic">Meterpreter Sessions</div>
-          <div class="day-topic">Privilege Escalation</div>
-          <div class="day-topic">Post-Exploitation</div>
+          <div class="day-topic">APK Recon — Dangerous Permissions &amp; Exported Components</div>
+          <div class="day-topic">jadx Decompile — Hardcoded AES Key &amp; Static IV (CVSS 9.8)</div>
+          <div class="day-topic">BroadcastReceiver SMS Password Exfiltration (CVSS 8.8)</div>
+          <div class="day-topic">Auth Bypass via Smali Edit, Re-build &amp; Re-sign (CVSS 9.1)</div>
         </div>
         <div class="day-card-footer">
           <span class="day-card-link">OPEN PRESENTATION <span class="arrow">→</span></span>
@@ -669,15 +669,15 @@ footer {
       <a class="day-card gold reveal reveal-delay-2" href="day-4.html">
         <div class="day-card-top">
           <div class="day-number">04</div>
-          <span class="day-badge gold">WEB SECURITY</span>
+          <span class="day-badge gold">API SECURITY</span>
         </div>
-        <div class="day-card-title">Web Application Security &amp; Burp Suite</div>
-        <div class="day-card-desc">Comprehensive web application vulnerability assessment using Burp Suite Pro. Exploring SQL injection, XSS, CSRF, authentication bypass, and OWASP Top 10 vulnerabilities in DVWA.</div>
+        <div class="day-card-title">Mobile API Security &amp; Traffic Analysis</div>
+        <div class="day-card-desc">Burp Suite proxy interception of InsecureBankv2 API traffic, IDOR exploitation on the /dotransfer endpoint enabling unauthorized fund transfers, brute-force attack confirming no rate limiting, and a CSRF PoC against a banking email-update endpoint.</div>
         <div class="day-topics">
-          <div class="day-topic">OWASP Top 10 Vulnerabilities</div>
-          <div class="day-topic">SQL Injection &amp; XSS</div>
-          <div class="day-topic">Burp Suite Intercept &amp; Repeat</div>
-          <div class="day-topic">DVWA Lab Exploitation</div>
+          <div class="day-topic">Burp Suite Proxy Setup &amp; API Endpoint Discovery</div>
+          <div class="day-topic">IDOR — /dotransfer from_acc Tampering (CVSS 8.1)</div>
+          <div class="day-topic">Brute-Force — 60 Requests, Zero Rate Limiting (CVSS 5.3)</div>
+          <div class="day-topic">CSRF PoC — Hidden Form Email Hijack + Bangladesh Bank Case Study</div>
         </div>
         <div class="day-card-footer">
           <span class="day-card-link">OPEN PRESENTATION <span class="arrow">→</span></span>
@@ -686,19 +686,21 @@ footer {
         <div class="day-card-accent"></div>
       </a>
 
-      <!-- DAY 5 -->
-      <a class="day-card purple reveal reveal-delay-1" href="day-5.html">
+      <!-- DAY 5 — full width -->
+      <a class="day-card purple reveal reveal-delay-1" href="day-5.html" style="grid-column: 1 / -1;">
         <div class="day-card-top">
           <div class="day-number">05</div>
-          <span class="day-badge purple">SOC / DEFENSE</span>
+          <span class="day-badge purple">CTF CHALLENGES</span>
         </div>
-        <div class="day-card-title">SOC Operations &amp; Incident Response</div>
-        <div class="day-card-desc">Final session covering Security Operations Center workflows, SIEM alert triage, incident response procedures, log analysis, and defensive strategies aligned with MITRE ATT&amp;CK framework.</div>
-        <div class="day-topics">
-          <div class="day-topic">SIEM Alert Triage</div>
-          <div class="day-topic">Incident Response Playbook</div>
-          <div class="day-topic">MITRE ATT&amp;CK Mapping</div>
-          <div class="day-topic">Threat Hunting Techniques</div>
+        <div class="day-card-title">CTF-Based Security Challenges — Multi-Domain</div>
+        <div class="day-card-desc">Competitive Capture The Flag challenges spanning six security domains — applying skills developed throughout the attachment in a hands-on flag-capture format. Each domain tests a distinct area of offensive security expertise.</div>
+        <div class="day-topics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">
+          <div class="day-topic">Cryptography — Cipher Analysis &amp; Decryption</div>
+          <div class="day-topic">Networking — Packet Capture &amp; Protocol Analysis</div>
+          <div class="day-topic">Forensics — File Carving &amp; Steganography</div>
+          <div class="day-topic">Web — SQL Injection, XSS &amp; Auth Bypass</div>
+          <div class="day-topic">Blockchain — Smart Contract Exploitation</div>
+          <div class="day-topic">Reverse / Binary — PWN &amp; Static Analysis</div>
         </div>
         <div class="day-card-footer">
           <span class="day-card-link">OPEN PRESENTATION <span class="arrow">→</span></span>
