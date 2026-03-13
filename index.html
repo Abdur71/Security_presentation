@@ -91,22 +91,15 @@ main { position: relative; z-index: 10; }
 }
 .hero-eyebrow::before { content: ''; width: 40px; height: 1px; background: var(--accent); }
 
-/* Big S3R-Xday display */
 .hero-team-name {
   font-family: 'Orbitron'; font-size: clamp(52px, 10vw, 120px);
   font-weight: 900; line-height: 1; margin-bottom: 16px;
   animation: fadeUp .8s .05s ease both;
   letter-spacing: -2px;
 }
-.htn-s3r {
-  color: var(--accent);
-  text-shadow: 0 0 40px rgba(0,255,231,0.6), 0 0 80px rgba(0,255,231,0.3);
-}
+.htn-s3r { color: var(--accent); text-shadow: 0 0 40px rgba(0,255,231,0.6), 0 0 80px rgba(0,255,231,0.3); }
 .htn-dash { color: rgba(255,255,255,0.25); }
-.htn-xday {
-  color: #fff;
-  text-shadow: 0 0 40px rgba(255,255,255,0.15);
-}
+.htn-xday { color: #fff; text-shadow: 0 0 40px rgba(255,255,255,0.15); }
 
 .hero h1 {
   font-family: 'Orbitron'; font-size: clamp(20px, 3vw, 36px);
@@ -127,10 +120,7 @@ main { position: relative; z-index: 10; }
   display: flex; gap: 0; margin-top: 48px; flex-wrap: wrap;
   animation: fadeUp .8s .35s ease both;
 }
-.hero-meta-item {
-  padding: 18px 32px; border: 1px solid var(--border);
-  border-right: none;
-}
+.hero-meta-item { padding: 18px 32px; border: 1px solid var(--border); border-right: none; }
 .hero-meta-item:last-child { border-right: 1px solid var(--border); }
 .hero-meta-label { font-family: 'Share Tech Mono'; font-size: 11px; color: var(--muted); letter-spacing: 2px; margin-bottom: 6px; }
 .hero-meta-val { font-size: 18px; font-weight: 700; color: var(--text); }
@@ -145,7 +135,6 @@ main { position: relative; z-index: 10; }
 .scroll-line::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: scanLine 2s infinite; }
 @keyframes scanLine { 0%{left:-100%} 100%{left:100%} }
 
-/* Hero right decoration */
 .hero-deco {
   position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
   opacity: 0.07; pointer-events: none;
@@ -206,7 +195,6 @@ main { position: relative; z-index: 10; }
   border-radius: 6px; padding: 32px; position: relative; overflow: hidden;
   text-decoration: none; color: inherit; display: block;
   transition: all .35s cubic-bezier(.25,.8,.25,1);
-  group: true;
 }
 .day-card::after {
   content: ''; position: absolute; inset: 0;
@@ -216,18 +204,28 @@ main { position: relative; z-index: 10; }
 .day-card:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,231,0.08); }
 .day-card:hover::after { opacity: 1; }
 
+.day-card.red:hover  { border-color: var(--accent2); box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(255,60,110,0.08); }
+.day-card.gold:hover { border-color: var(--accent3); box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(240,192,64,0.08); }
+.day-card.green:hover{ border-color: var(--green);   box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,136,0.08); }
+.day-card.purple:hover{border-color: var(--purple);  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(176,96,255,0.08); }
+
 .day-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
 .day-number { font-family: 'Orbitron'; font-size: 52px; font-weight: 900; line-height: 1; color: rgba(0,255,231,0.1); transition: color .3s; }
 .day-card:hover .day-number { color: rgba(0,255,231,0.25); }
+.day-card.red:hover   .day-number { color: rgba(255,60,110,0.25); }
+.day-card.gold:hover  .day-number { color: rgba(240,192,64,0.25); }
+.day-card.green:hover .day-number { color: rgba(0,255,136,0.25); }
+.day-card.purple:hover.day-number { color: rgba(176,96,255,0.25); }
+
 .day-badge { font-family: 'Share Tech Mono'; font-size: 10px; letter-spacing: 2px; padding: 4px 10px; border-radius: 2px; border: 1px solid; }
-.day-badge.cyan { border-color: rgba(0,255,231,0.4); color: var(--accent); background: rgba(0,255,231,0.08); }
-.day-badge.red  { border-color: rgba(255,60,110,0.4); color: var(--accent2); background: rgba(255,60,110,0.08); }
-.day-badge.gold { border-color: rgba(240,192,64,0.4); color: var(--accent3); background: rgba(240,192,64,0.08); }
-.day-badge.green{ border-color: rgba(0,255,136,0.4); color: var(--green); background: rgba(0,255,136,0.08); }
-.day-badge.purple{border-color:rgba(176,96,255,0.4);color:var(--purple);background:rgba(176,96,255,0.08);}
+.day-badge.cyan   { border-color: rgba(0,255,231,0.4);  color: var(--accent);  background: rgba(0,255,231,0.08); }
+.day-badge.red    { border-color: rgba(255,60,110,0.4); color: var(--accent2); background: rgba(255,60,110,0.08); }
+.day-badge.gold   { border-color: rgba(240,192,64,0.4); color: var(--accent3); background: rgba(240,192,64,0.08); }
+.day-badge.green  { border-color: rgba(0,255,136,0.4);  color: var(--green);   background: rgba(0,255,136,0.08); }
+.day-badge.purple { border-color: rgba(176,96,255,0.4); color: var(--purple);  background: rgba(176,96,255,0.08); }
 
 .day-card-title { font-family: 'Orbitron'; font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 12px; line-height: 1.3; }
-.day-card-desc { font-size: 15px; color: var(--muted); line-height: 1.75; margin-bottom: 24px; }
+.day-card-desc  { font-size: 15px; color: var(--muted); line-height: 1.75; margin-bottom: 24px; }
 
 .day-topics { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
 .day-topic { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); font-family: 'Share Tech Mono'; }
@@ -236,16 +234,28 @@ main { position: relative; z-index: 10; }
 .day-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid var(--border); }
 .day-card-link { font-family: 'Share Tech Mono'; font-size: 13px; color: var(--accent); letter-spacing: 2px; display: flex; align-items: center; gap: 8px; transition: gap .2s; }
 .day-card:hover .day-card-link { gap: 14px; }
+.day-card.red   .day-card-link { color: var(--accent2); }
+.day-card.gold  .day-card-link { color: var(--accent3); }
+.day-card.green .day-card-link { color: var(--green); }
+.day-card.purple.day-card-link { color: var(--purple); }
+.day-card.red   .day-card-link,
+.day-card.gold  .day-card-link,
+.day-card.green .day-card-link,
+.day-card.purple .day-card-link { color: inherit; }
+.day-card.red    .day-card-footer .day-card-link { color: var(--accent2); }
+.day-card.gold   .day-card-footer .day-card-link { color: var(--accent3); }
+.day-card.green  .day-card-footer .day-card-link { color: var(--green); }
+.day-card.purple .day-card-footer .day-card-link { color: var(--purple); }
+
 .day-card-link .arrow { transition: transform .2s; }
 .day-card:hover .day-card-link .arrow { transform: translateX(4px); }
 .day-card-num-small { font-family: 'Share Tech Mono'; font-size: 12px; color: var(--muted); }
 
-/* Accent line at bottom of day card */
 .day-card-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
 .day-card:hover .day-card-accent { transform: scaleX(1); }
-.day-card.red .day-card-accent { background: var(--accent2); }
-.day-card.gold .day-card-accent { background: var(--accent3); }
-.day-card.green .day-card-accent { background: var(--green); }
+.day-card.red    .day-card-accent { background: var(--accent2); }
+.day-card.gold   .day-card-accent { background: var(--accent3); }
+.day-card.green  .day-card-accent { background: var(--green); }
 .day-card.purple .day-card-accent { background: var(--purple); }
 
 /* ── TOPICS OVERVIEW ── */
@@ -253,8 +263,7 @@ main { position: relative; z-index: 10; }
 .topic-step {
   flex: 1; min-width: 160px; padding: 20px 16px;
   background: var(--dim); border: 1px solid var(--border); border-right: none;
-  text-align: center; position: relative; cursor: default;
-  transition: background .3s;
+  text-align: center; position: relative; cursor: default; transition: background .3s;
 }
 .topic-step:last-child { border-right: 1px solid var(--border); }
 .topic-step:hover { background: rgba(0,255,231,0.06); }
@@ -267,8 +276,8 @@ main { position: relative; z-index: 10; }
 .stats-row { display: flex; gap: 1px; margin: 48px 0; background: var(--border); border: 1px solid var(--border); }
 .stat-box { flex: 1; background: var(--bg2); padding: 28px 24px; text-align: center; }
 .stat-val { font-family: 'Orbitron'; font-size: 52px; font-weight: 900; color: var(--accent); line-height: 1; }
-.stat-val.red { color: var(--accent2); }
-.stat-val.gold { color: var(--accent3); }
+.stat-val.red   { color: var(--accent2); }
+.stat-val.gold  { color: var(--accent3); }
 .stat-val.green { color: var(--green); }
 .stat-label { font-family: 'Share Tech Mono'; font-size: 12px; color: var(--muted); letter-spacing: 2px; margin-top: 10px; }
 
@@ -278,8 +287,7 @@ main { position: relative; z-index: 10; }
 .doc-card {
   border: 1px dashed rgba(240,192,64,0.35); border-radius: 6px;
   padding: 48px; text-align: center; position: relative; overflow: hidden;
-  background: rgba(240,192,64,0.03);
-  transition: border-color .3s, background .3s;
+  background: rgba(240,192,64,0.03); transition: border-color .3s, background .3s;
 }
 .doc-card:hover { border-color: rgba(240,192,64,0.6); background: rgba(240,192,64,0.05); }
 
@@ -318,12 +326,10 @@ main { position: relative; z-index: 10; }
 .team-card:nth-child(3):hover { border-color: var(--accent3); }
 .team-card:nth-child(4):hover { border-color: var(--green); }
 
-/* Photo container — shows photo if src set, else shows initials */
 .team-avatar-wrap {
   width: 90px; height: 90px; border-radius: 50%;
   margin: 0 auto 18px; position: relative;
-  border: 2px solid var(--border);
-  transition: border-color .3s, box-shadow .3s;
+  border: 2px solid var(--border); transition: border-color .3s, box-shadow .3s;
   overflow: hidden; background: var(--dim);
 }
 .team-card:hover .team-avatar-wrap { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,255,231,0.2); }
@@ -331,10 +337,7 @@ main { position: relative; z-index: 10; }
 .team-card:nth-child(3):hover .team-avatar-wrap { border-color: var(--accent3); box-shadow: 0 0 20px rgba(240,192,64,0.2); }
 .team-card:nth-child(4):hover .team-avatar-wrap { border-color: var(--green); box-shadow: 0 0 20px rgba(0,255,136,0.2); }
 
-.team-avatar-img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-}
-/* Fallback initials shown when no photo */
+.team-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .team-avatar-initials {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-family: 'Orbitron'; font-size: 22px; font-weight: 900; color: var(--accent);
@@ -343,19 +346,18 @@ main { position: relative; z-index: 10; }
 .team-card:nth-child(3) .team-avatar-initials { color: var(--accent3); }
 .team-card:nth-child(4) .team-avatar-initials { color: var(--green); }
 
-.team-name { font-family: 'Orbitron'; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; line-height: 1.4; }
+.team-name     { font-family: 'Orbitron'; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; line-height: 1.4; }
 .team-username { font-family: 'Share Tech Mono'; font-size: 14px; color: var(--accent); letter-spacing: 1px; margin-bottom: 8px; }
 .team-card:nth-child(2) .team-username { color: var(--accent2); }
 .team-card:nth-child(3) .team-username { color: var(--accent3); }
 .team-card:nth-child(4) .team-username { color: var(--green); }
-.team-card:first-child .team-username { color: var(--accent3); }
+.team-card:first-child .team-username  { color: var(--accent3); }
 .team-role { font-family: 'Share Tech Mono'; font-size: 11px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
 .team-card:nth-child(2) .team-role { color: var(--accent2); }
 .team-card:nth-child(3) .team-role { color: var(--accent3); }
 .team-card:nth-child(4) .team-role { color: var(--green); }
 .team-spec { font-family: 'Rajdhani'; font-size: 14px; color: var(--muted); margin-bottom: 2px; font-weight: 400; }
-.team-id { font-family: 'Share Tech Mono'; font-size: 10px; color: rgba(0,255,231,0.25); letter-spacing: 1px; margin-top: 10px; }
-/* Captain card gets a gold accent */
+.team-id   { font-family: 'Share Tech Mono'; font-size: 10px; color: rgba(0,255,231,0.25); letter-spacing: 1px; margin-top: 10px; }
 .team-card:first-child { border-color: rgba(240,192,64,0.25); }
 .team-card:first-child::before { background: var(--accent3) !important; }
 .team-card:first-child:hover { border-color: var(--accent3); box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 20px rgba(240,192,64,0.1); }
@@ -369,7 +371,7 @@ footer {
   display: flex; justify-content: space-between; align-items: center;
   flex-wrap: wrap; gap: 16px;
 }
-.footer-left { font-family: 'Share Tech Mono'; font-size: 13px; color: var(--muted); }
+.footer-left  { font-family: 'Share Tech Mono'; font-size: 13px; color: var(--muted); }
 .footer-left span { color: var(--accent); }
 .footer-right { font-family: 'Share Tech Mono'; font-size: 13px; color: var(--muted); letter-spacing: 1px; }
 
@@ -471,19 +473,18 @@ footer {
       <svg width="500" height="500" viewBox="0 0 300 300">
         <circle cx="150" cy="150" r="140" fill="none" stroke="#00ffe7" stroke-width="0.8"/>
         <circle cx="150" cy="150" r="110" fill="none" stroke="#00ffe7" stroke-width="0.5"/>
-        <circle cx="150" cy="150" r="80" fill="none" stroke="#00ffe7" stroke-width="1"/>
-        <circle cx="150" cy="150" r="50" fill="none" stroke="#00ffe7" stroke-width="0.6"/>
-        <circle cx="150" cy="150" r="20" fill="none" stroke="#00ffe7" stroke-width="1.2"/>
-        <line x1="150" y1="10" x2="150" y2="290" stroke="#00ffe7" stroke-width="0.4"/>
-        <line x1="10" y1="150" x2="290" y2="150" stroke="#00ffe7" stroke-width="0.4"/>
-        <line x1="51" y1="51" x2="249" y2="249" stroke="#00ffe7" stroke-width="0.3"/>
-        <line x1="249" y1="51" x2="51" y2="249" stroke="#00ffe7" stroke-width="0.3"/>
+        <circle cx="150" cy="150" r="80"  fill="none" stroke="#00ffe7" stroke-width="1"/>
+        <circle cx="150" cy="150" r="50"  fill="none" stroke="#00ffe7" stroke-width="0.6"/>
+        <circle cx="150" cy="150" r="20"  fill="none" stroke="#00ffe7" stroke-width="1.2"/>
+        <line x1="150" y1="10"  x2="150" y2="290" stroke="#00ffe7" stroke-width="0.4"/>
+        <line x1="10"  y1="150" x2="290" y2="150" stroke="#00ffe7" stroke-width="0.4"/>
+        <line x1="51"  y1="51"  x2="249" y2="249" stroke="#00ffe7" stroke-width="0.3"/>
+        <line x1="249" y1="51"  x2="51"  y2="249" stroke="#00ffe7" stroke-width="0.3"/>
         <path d="M150 10 L190 45 L190 100 Q190 160 150 190 Q110 160 110 100 L110 45 Z" fill="none" stroke="#00ffe7" stroke-width="1.5"/>
-        <!-- dots at circle intersections -->
-        <circle cx="150" cy="10" r="3" fill="#00ffe7" opacity="0.6"/>
+        <circle cx="150" cy="10"  r="3" fill="#00ffe7" opacity="0.6"/>
         <circle cx="290" cy="150" r="3" fill="#00ffe7" opacity="0.6"/>
         <circle cx="150" cy="290" r="3" fill="#00ffe7" opacity="0.6"/>
-        <circle cx="10" cy="150" r="3" fill="#00ffe7" opacity="0.6"/>
+        <circle cx="10"  cy="150" r="3" fill="#00ffe7" opacity="0.6"/>
       </svg>
     </div>
 
@@ -544,7 +545,7 @@ footer {
       </div>
       <div class="about-card gold reveal reveal-delay-1">
         <div class="about-card-icon">🛠</div>
-        <div class="about-card-title">Tools & Environment</div>
+        <div class="about-card-title">Tools &amp; Environment</div>
         <div class="about-card-text">Kali Linux · Metasploit Framework · Nmap · Wireshark · Burp Suite · Docker · Metasploitable VM · OpenSSH · DVWA · Mutillidae</div>
       </div>
       <div class="about-card green reveal reveal-delay-2">
@@ -601,8 +602,29 @@ footer {
 
     <div class="days-grid">
 
+      <!-- DAY 1 -->
+      <a class="day-card green reveal reveal-delay-1" href="day-1.html">
+        <div class="day-card-top">
+          <div class="day-number">01</div>
+          <span class="day-badge green">RECONNAISSANCE</span>
+        </div>
+        <div class="day-card-title">Network Scanning &amp; Vulnerability Discovery</div>
+        <div class="day-card-desc">Foundational reconnaissance session covering virtual lab setup, Nmap scanning methodology, port enumeration, CVE research against discovered services, and an introduction to CTF-style recon pipelines.</div>
+        <div class="day-topics">
+          <div class="day-topic">Nmap Host &amp; Port Scanning</div>
+          <div class="day-topic">Service Version Detection (-sV -sC)</div>
+          <div class="day-topic">CVE Research — vsftpd, Samba, Tomcat</div>
+          <div class="day-topic">Bind Shell vs. Reverse Shell</div>
+        </div>
+        <div class="day-card-footer">
+          <span class="day-card-link">OPEN PRESENTATION <span class="arrow">→</span></span>
+          <span class="day-card-num-small">SESSION 01 / 05</span>
+        </div>
+        <div class="day-card-accent"></div>
+      </a>
+
       <!-- DAY 2 -->
-      <a class="day-card reveal reveal-delay-1" href="day-2.html">
+      <a class="day-card reveal reveal-delay-2" href="day-2.html">
         <div class="day-card-top">
           <div class="day-number">02</div>
           <span class="day-badge cyan">KILL CHAIN</span>
@@ -623,7 +645,7 @@ footer {
       </a>
 
       <!-- DAY 3 -->
-      <a class="day-card red reveal reveal-delay-2" href="day-3.html">
+      <a class="day-card red reveal reveal-delay-1" href="day-3.html">
         <div class="day-card-top">
           <div class="day-number">03</div>
           <span class="day-badge red">EXPLOITATION</span>
@@ -644,7 +666,7 @@ footer {
       </a>
 
       <!-- DAY 4 -->
-      <a class="day-card gold reveal reveal-delay-1" href="day-4.html">
+      <a class="day-card gold reveal reveal-delay-2" href="day-4.html">
         <div class="day-card-top">
           <div class="day-number">04</div>
           <span class="day-badge gold">WEB SECURITY</span>
@@ -665,7 +687,7 @@ footer {
       </a>
 
       <!-- DAY 5 -->
-      <a class="day-card purple reveal reveal-delay-2" href="day-5.html">
+      <a class="day-card purple reveal reveal-delay-1" href="day-5.html">
         <div class="day-card-top">
           <div class="day-number">05</div>
           <span class="day-badge purple">SOC / DEFENSE</span>

