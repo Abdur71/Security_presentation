@@ -215,7 +215,7 @@ main { position: relative; z-index: 10; }
 .day-card.red:hover   .day-number { color: rgba(255,60,110,0.25); }
 .day-card.gold:hover  .day-number { color: rgba(240,192,64,0.25); }
 .day-card.green:hover .day-number { color: rgba(0,255,136,0.25); }
-.day-card.purple:hover.day-number { color: rgba(176,96,255,0.25); }
+.day-card.purple:hover .day-number { color: rgba(176,96,255,0.25); }
 
 .day-badge { font-family: 'Share Tech Mono'; font-size: 10px; letter-spacing: 2px; padding: 4px 10px; border-radius: 2px; border: 1px solid; }
 .day-badge.cyan   { border-color: rgba(0,255,231,0.4);  color: var(--accent);  background: rgba(0,255,231,0.08); }
@@ -234,14 +234,6 @@ main { position: relative; z-index: 10; }
 .day-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid var(--border); }
 .day-card-link { font-family: 'Share Tech Mono'; font-size: 13px; color: var(--accent); letter-spacing: 2px; display: flex; align-items: center; gap: 8px; transition: gap .2s; }
 .day-card:hover .day-card-link { gap: 14px; }
-.day-card.red   .day-card-link { color: var(--accent2); }
-.day-card.gold  .day-card-link { color: var(--accent3); }
-.day-card.green .day-card-link { color: var(--green); }
-.day-card.purple.day-card-link { color: var(--purple); }
-.day-card.red   .day-card-link,
-.day-card.gold  .day-card-link,
-.day-card.green .day-card-link,
-.day-card.purple .day-card-link { color: inherit; }
 .day-card.red    .day-card-footer .day-card-link { color: var(--accent2); }
 .day-card.gold   .day-card-footer .day-card-link { color: var(--accent3); }
 .day-card.green  .day-card-footer .day-card-link { color: var(--green); }
@@ -257,6 +249,106 @@ main { position: relative; z-index: 10; }
 .day-card.gold   .day-card-accent { background: var(--accent3); }
 .day-card.green  .day-card-accent { background: var(--green); }
 .day-card.purple .day-card-accent { background: var(--purple); }
+
+/* ── PRESENTATION PICKER POPUP ── */
+.pres-picker-wrap {
+  position: relative;
+  display: inline-block;
+  z-index: 50;
+}
+
+.pres-trigger {
+  font-family: 'Share Tech Mono'; font-size: 13px; color: var(--purple);
+  letter-spacing: 2px; display: flex; align-items: center; gap: 8px;
+  cursor: pointer; background: none; border: none; padding: 0;
+  transition: gap .2s, color .2s;
+}
+.day-card:hover .pres-trigger { gap: 14px; }
+.pres-trigger .arrow { transition: transform .2s; display: inline-block; }
+.day-card:hover .pres-trigger .arrow { transform: translateX(4px); }
+
+.pres-popup {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  min-width: 290px;
+  background: #030d12;
+  border: 1px solid rgba(176,96,255,0.45);
+  border-radius: 6px;
+  overflow: hidden;
+  z-index: 9999;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.7), 0 0 30px rgba(176,96,255,0.12);
+  animation: popupIn .18s ease both;
+}
+@keyframes popupIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pres-popup.open { display: block; }
+
+.pres-popup-header {
+  font-family: 'Share Tech Mono'; font-size: 10px; letter-spacing: 3px;
+  color: rgba(176,96,255,0.6); padding: 12px 16px 10px;
+  border-bottom: 1px solid rgba(176,96,255,0.15);
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+}
+.pres-popup-header::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--purple);
+  box-shadow: 0 0 8px var(--purple);
+  animation: pulse 1.5s infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
+
+.pres-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--text);
+  font-family: 'Rajdhani'; font-size: 15px; font-weight: 600;
+  border-bottom: 1px solid rgba(176,96,255,0.1);
+  transition: background .15s, color .15s;
+  position: relative;
+}
+.pres-item:last-child { border-bottom: none; }
+.pres-item:hover {
+  background: rgba(176,96,255,0.12);
+  color: #fff;
+}
+
+.pres-item-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(176,96,255,0.15);
+  border: 1px solid rgba(176,96,255,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron'; font-size: 10px; font-weight: 700;
+  color: var(--purple);
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.pres-item:hover .pres-item-avatar {
+  background: rgba(176,96,255,0.25);
+  border-color: var(--purple);
+  box-shadow: 0 0 12px rgba(176,96,255,0.35);
+}
+
+.pres-item-name { flex: 1; }
+.pres-item-name span {
+  display: block; font-family: 'Share Tech Mono'; font-size: 10px;
+  color: rgba(176,96,255,0.5); letter-spacing: 1px; margin-top: 2px;
+  transition: color .15s;
+}
+.pres-item:hover .pres-item-name span { color: rgba(176,96,255,0.8); }
+
+.pres-item-arrow {
+  font-size: 14px; color: rgba(176,96,255,0.4);
+  transition: color .15s, transform .15s;
+}
+.pres-item:hover .pres-item-arrow { color: var(--purple); transform: translateX(3px); }
 
 /* ── TOPICS OVERVIEW ── */
 .topics-flow { display: flex; gap: 0; overflow-x: auto; margin-top: 40px; }
@@ -302,7 +394,6 @@ main { position: relative; z-index: 10; }
   padding: 12px 28px; border-radius: 2px; letter-spacing: 3px;
 }
 .coming-soon-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
 
 .doc-meta-row { display: flex; justify-content: center; gap: 36px; margin-top: 32px; flex-wrap: wrap; }
 .doc-meta-item { font-family: 'Share Tech Mono'; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 7px; }
@@ -412,6 +503,7 @@ footer {
   .hero-team-name { font-size: clamp(38px, 11vw, 72px); letter-spacing: -1px; }
   .nav-logo { font-size: 15px; }
   .section-title { font-size: clamp(26px, 5.5vw, 40px); }
+  .pres-popup { min-width: 260px; }
 }
 @media(max-width:480px) {
   .hero { padding: 100px 20px 60px; }
@@ -439,6 +531,7 @@ footer {
   .about-card-text { font-size: 14px; }
   .section { padding: 52px 20px; }
   nav { padding: 12px 16px; }
+  .pres-popup { min-width: 230px; left: auto; right: 0; }
 }
 </style>
 </head>
@@ -687,7 +780,7 @@ footer {
       </a>
 
       <!-- DAY 5 — full width -->
-      <a class="day-card purple reveal reveal-delay-1" href="day-5.html" style="grid-column: 1 / -1;">
+      <div class="day-card purple reveal reveal-delay-1" style="grid-column: 1 / -1;">
         <div class="day-card-top">
           <div class="day-number">05</div>
           <span class="day-badge purple">CTF CHALLENGES</span>
@@ -703,11 +796,52 @@ footer {
           <div class="day-topic">Reverse / Binary — PWN &amp; Static Analysis</div>
         </div>
         <div class="day-card-footer">
-          <span class="day-card-link">OPEN PRESENTATION <span class="arrow">→</span></span>
+          <!-- PRESENTATION PICKER -->
+          <div class="pres-picker-wrap" id="presPickerWrap">
+            <button class="pres-trigger" id="presBtn" type="button">
+              OPEN PRESENTATION <span class="arrow">→</span>
+            </button>
+            <div class="pres-popup" id="presPopup">
+              <div class="pres-popup-header">SELECT PRESENTER</div>
+              <a class="pres-item" href="Sabbir_Presentation.html">
+                <div class="pres-item-avatar">SH</div>
+                <div class="pres-item-name">
+                  Md. Sabbir Hosen
+                  <span>@R3dra09 · CAPTAIN</span>
+                </div>
+                <span class="pres-item-arrow">→</span>
+              </a>
+              <a class="pres-item" href="A_Rafiu_Presentation.html">
+                <div class="pres-item-avatar">AR</div>
+                <div class="pres-item-name">
+                  A. Rafiu
+                  <span>@StormBreaker · MEMBER</span>
+                </div>
+                <span class="pres-item-arrow">→</span>
+              </a>
+              <a class="pres-item" href="Shad_Presentation.html">
+                <div class="pres-item-avatar">AS</div>
+                <div class="pres-item-name">
+                  Md. Abdullah Ibna Shad
+                  <span>@Ph4r4oh · MEMBER</span>
+                </div>
+                <span class="pres-item-arrow">→</span>
+              </a>
+              <a class="pres-item" href="Siam_Presentation.html">
+                <div class="pres-item-avatar">SS</div>
+                <div class="pres-item-name">
+                  Md Sajjad Hosen Siam
+                  <span>@Nu11Shy · MEMBER</span>
+                </div>
+                <span class="pres-item-arrow">→</span>
+              </a>
+            </div>
+          </div>
+          <!-- END PICKER -->
           <span class="day-card-num-small">SESSION 05 / 05</span>
         </div>
         <div class="day-card-accent"></div>
-      </a>
+      </div>
 
     </div>
   </section>
@@ -839,6 +973,34 @@ footer {
       const target = document.querySelector(a.getAttribute('href'));
       if (target) target.scrollIntoView({ behavior: 'smooth' });
     });
+  });
+
+  // ── PRESENTATION PICKER ──
+  const presBtn  = document.getElementById('presBtn');
+  const presPopup = document.getElementById('presPopup');
+  const presWrap  = document.getElementById('presPickerWrap');
+
+  presBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    e.preventDefault();
+    presPopup.classList.toggle('open');
+  });
+
+  // Close popup when clicking outside
+  document.addEventListener('click', e => {
+    if (!presWrap.contains(e.target)) {
+      presPopup.classList.remove('open');
+    }
+  });
+
+  // Close popup on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') presPopup.classList.remove('open');
+  });
+
+  // Prevent popup links from bubbling up and closing before navigation
+  presPopup.querySelectorAll('.pres-item').forEach(item => {
+    item.addEventListener('click', e => e.stopPropagation());
   });
 </script>
 </body>

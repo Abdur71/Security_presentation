@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blockchain & Web Security</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #0d0d1a;
+    --panel: #111122;
+    --border: #1a1a3e;
+    --cyan: #00f5ff;
+    --green: #00ff88;
+    --purple: #a855f7;
+    --pink: #ff2d78;
+    --orange: #ff6b35;
+    --yellow: #ffd700;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --glow-c: 0 0 20px rgba(0,245,255,0.4);
+    --glow-g: 0 0 20px rgba(0,255,136,0.4);
+    --glow-p: 0 0 20px rgba(168,85,247,0.4);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ── MATRIX CANVAS ── */
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.05;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── SLIDE CONTAINER ── */
+  #slides {
+    position: relative;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    display: none;
+    width: 100%;
+    height: 100%;
+    padding: 20px 48px 0;
+    flex-direction: column;
+    align-items: center;
+    /* NOTE: no justify-content:center here — causes top-clip bug when overflow */
+    animation: fadeIn 0.4s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-padding-top: 20px;
+  }
+
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity:0; transform: translateY(10px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
+    transition: width 0.4s ease;
+    z-index: 100;
+    box-shadow: 0 0 12px var(--cyan);
+  }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 100;
+    background: rgba(10,10,20,0.85);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 10px 24px;
+    backdrop-filter: blur(10px);
+  }
+
+  #nav button {
+    background: transparent;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    padding: 6px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  #nav button:hover {
+    background: var(--cyan);
+    color: var(--bg);
+    box-shadow: var(--glow-c);
+  }
+
+  #nav button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  #slide-counter {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 70px;
+    text-align: center;
+  }
+
+  /* ── KEYBOARD HINT ── */
+  #kb-hint {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    z-index: 100;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .slide-title {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    line-height: 1.15;
+  }
+
+  .slide-subtitle {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 300;
+    text-align: center;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+
+  .section-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding: 4px 14px;
+    border-radius: 3px;
+  }
+
+  /* ── CARDS & GRIDS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 960px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; width: 100%; max-width: 1000px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; width: 100%; max-width: 1060px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 24px rgba(0,245,255,0.15);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+
+  .card.cyan::before  { background: var(--cyan);   }
+  .card.green::before { background: var(--green);  }
+  .card.purple::before{ background: var(--purple); }
+  .card.pink::before  { background: var(--pink);   }
+  .card.orange::before{ background: var(--orange); }
+  .card.yellow::before{ background: var(--yellow); }
+
+  .card h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .card p, .card li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #b0b8c8;
+  }
+
+  .card ul { padding-left: 18px; }
+
+  /* ── CODE BLOCKS ── */
+  pre {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12.5px;
+    background: #050510;
+    border: 1px solid #1a2040;
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    line-height: 1.7;
+    width: 100%;
+    max-width: 900px;
+    position: relative;
+    box-sizing: border-box;
+    white-space: pre;
+    word-break: normal;
+  }
+
+  .card pre {
+    max-width: 100%;
+    font-size: 11.5px;
+  }
+
+  .kw  { color: var(--purple); }
+  .fn  { color: var(--cyan);   }
+  .str { color: var(--green);  }
+  .cm  { color: var(--muted);  }
+  .num { color: var(--orange); }
+  .var { color: #f8fafc;       }
+  .op  { color: var(--pink);   }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.5px;
+    margin: 2px;
+  }
+
+  .badge-cyan   { background: rgba(0,245,255,0.12); color:var(--cyan);   border:1px solid rgba(0,245,255,0.3); }
+  .badge-green  { background: rgba(0,255,136,0.12); color:var(--green);  border:1px solid rgba(0,255,136,0.3); }
+  .badge-purple { background: rgba(168,85,247,0.12);color:var(--purple); border:1px solid rgba(168,85,247,0.3);}
+  .badge-pink   { background: rgba(255,45,120,0.12);color:var(--pink);   border:1px solid rgba(255,45,120,0.3);}
+  .badge-orange { background: rgba(255,107,53,0.12);color:var(--orange); border:1px solid rgba(255,107,53,0.3);}
+  .badge-yellow { background: rgba(255,215,0,0.12); color:var(--yellow); border:1px solid rgba(255,215,0,0.3); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 80px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    margin: 18px auto;
+  }
+
+  /* ── STEP LIST ── */
+  .step-list { list-style: none; width: 100%; max-width: 860px; }
+  .step-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .step-list li:last-child { border-bottom: none; }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .step-num.c { background: rgba(0,245,255,0.15); color:var(--cyan);   border:1px solid var(--cyan);   }
+  .step-num.g { background: rgba(0,255,136,0.15); color:var(--green);  border:1px solid var(--green);  }
+  .step-num.p { background: rgba(168,85,247,0.15);color:var(--purple); border:1px solid var(--purple); }
+
+  .step-content strong { color: var(--text); display: block; font-size: 15px; }
+  .step-content span   { color: var(--muted); font-size: 13px; }
+
+  /* ── TITLE SLIDE EXTRAS ── */
+  .hex-grid {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    max-width: 600px;
+    opacity: 0.5;
+  }
+
+  .hex {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    padding: 2px 6px;
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 3px;
+    animation: blink 2s infinite;
+  }
+
+  .hex:nth-child(2n)  { color: var(--green);  animation-delay: 0.5s; }
+  .hex:nth-child(3n)  { color: var(--purple); animation-delay: 1s;   }
+
+  @keyframes blink {
+    0%,100%{ opacity:0.5; }
+    50%    { opacity:1;   }
+  }
+
+  .big-icon {
+    font-size: 64px;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 20px var(--cyan));
+  }
+
+  /* ── THREAT METER ── */
+  .severity-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+    font-size: 13px;
+  }
+
+  .severity-bar .label {
+    width: 80px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: #1a1a3e;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap:0;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 20px 0;
+    width: 100%;
+  }
+
+  .flow-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 13px;
+    text-align: center;
+    min-width: 110px;
+  }
+
+  .flow-arrow {
+    color: var(--cyan);
+    font-size: 20px;
+    padding: 0 6px;
+    opacity: 0.7;
+  }
+
+  /* ── QUOTE ── */
+  .quote {
+    font-size: 20px;
+    font-style: italic;
+    text-align: center;
+    color: var(--cyan);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 300;
+    max-width: 700px;
+    line-height: 1.6;
+    padding: 20px;
+    border-left: 3px solid var(--cyan);
+    background: rgba(0,245,255,0.03);
+    border-radius: 0 8px 8px 0;
+  }
+
+  /* ── TABLE ── */
+  .ctf-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .ctf-table th {
+    background: rgba(0,245,255,0.08);
+    color: var(--cyan);
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ctf-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(26,26,62,0.5);
+    color: #b0b8c8;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+  }
+
+  .ctf-table tr:hover td { background: rgba(0,245,255,0.03); }
+
+  /* ── GREEN TERMINAL ── */
+  .terminal {
+    background: #040a04;
+    border: 1px solid #1a3a1a;
+    border-radius: 8px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 900px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.8;
+  }
+
+  .terminal .prompt { color: var(--green); }
+  .terminal .cmd    { color: #e2e8f0; }
+  .terminal .out    { color: #64a864; }
+  .terminal .err    { color: var(--pink); }
+  .terminal .info   { color: var(--cyan); }
+
+  /* ── SCROLL FIX ── */
+  .scroll-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 18px;
+    padding-top: 24px;
+    padding-bottom: 96px;   /* clear the fixed nav bar */
+    min-height: 100%;       /* enables flex centering without top-clip */
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  /* ── TABLE SCROLL WRAPPER ── */
+  .table-scroll {
+    width: 100%;
+    max-width: 960px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .slide { padding: 16px 20px 0; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    pre  { font-size: 11px; }
+    .ctf-table { font-size: 11px; min-width: 600px; }
+    .ctf-table th, .ctf-table td { padding: 8px 10px; }
+    .step-list li { font-size: 13px; }
+    .slide-title { font-size: clamp(16px,3vw,28px) !important; }
+    .quote { font-size: 15px; }
+  }
+
+  @media (max-width: 540px) {
+    .slide { padding: 12px 12px 0; }
+    .grid-4 { grid-template-columns: 1fr; }
+    .card { padding: 14px 12px; }
+    .card h3 { font-size: 11px; }
+    .card p, .card li { font-size: 12px; }
+    #nav { gap: 8px; padding: 8px 14px; }
+    #nav button { padding: 5px 12px; font-size: 10px; }
+  }
+
+  /* ── NEON HEADING ── */
+  .neon-cyan  { color: var(--cyan);   text-shadow: 0 0 30px rgba(0,245,255,0.6); }
+  .neon-green { color: var(--green);  text-shadow: 0 0 30px rgba(0,255,136,0.6); }
+  .neon-purple{ color: var(--purple); text-shadow: 0 0 30px rgba(168,85,247,0.6);}
+  .neon-pink  { color: var(--pink);   text-shadow: 0 0 30px rgba(255,45,120,0.6);}
+
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div id="progress-bar"></div>
+<div id="kb-hint">← → ARROW KEYS</div>
+
+<!-- ═══════════════════════════════════ SLIDES ═══════════════════════════════════ -->
+<div id="slides">
+
+<!-- ── SLIDE 1: TITLE ── -->
+<div class="slide active" id="s1">
+  <div class="scroll-content">
+    <div class="big-icon">⛓️</div>
+    <div class="slide-title" style="font-size:clamp(26px,4vw,52px);">
+      <span class="neon-cyan">CTF</span>
+      <span style="color:var(--muted);font-size:60%;display:block;margin-top:6px;">Blockchain &amp; Web Security</span>
+    </div>
+    <div class="divider"></div>
+    <p class="slide-subtitle" style="font-size:16px;">Methodology · Attack Vectors · Exploitation · Tools</p>
+    <div class="hex-grid">
+      <span class="hex">0x41</span><span class="hex">REENTRANCY</span><span class="hex">XSS</span>
+      <span class="hex">SQLI</span><span class="hex">SELFDESTRUCT</span><span class="hex">JWT</span>
+      <span class="hex">OVERFLOW</span><span class="hex">SSRF</span><span class="hex">IDOR</span>
+      <span class="hex">DELEGATECALL</span><span class="hex">LFI</span><span class="hex">FRONTRUN</span>
+    </div>
+  
+  </div>
+</div>
+
+<!-- ── SLIDE 2: AGENDA ── -->
+<div class="slide" id="s2">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--cyan);background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.2);">OVERVIEW</div>
+    <div class="slide-title neon-cyan" style="font-size:clamp(20px,3vw,38px);">What We'll Cover</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="max-width:900px;">
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">🌐 Web CTF Topics</h3>
+        <ul style="margin-top:8px;">
+          <li>SQL Injection (SQLi)</li>
+          <li>Cross-Site Scripting (XSS)</li>
+          <li>Server-Side Request Forgery (SSRF)</li>
+          <li>Local / Remote File Inclusion</li>
+          <li>Insecure Direct Object Reference</li>
+          <li>JWT / Auth Bypass</li>
+          <li>Command Injection</li>
+          <li>File Upload Exploits</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3 style="color:var(--purple);">⛓️ Blockchain CTF Topics</h3>
+        <ul style="margin-top:8px;">
+          <li>Reentrancy Attacks</li>
+          <li>Integer Overflow / Underflow</li>
+          <li>Access Control Flaws</li>
+          <li>Flash Loan Attacks</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3 style="color:var(--green);">🧭 Methodology</h3>
+        <ul style="margin-top:8px;">
+          <li>Recon &amp; Enumeration</li>
+          <li>Fingerprinting &amp; OSINT</li>
+          <li>Vulnerability Discovery</li>
+          <li>Exploitation &amp; Flag Capture</li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <h3 style="color:var(--orange);">🛠️ Tools &amp; Resources</h3>
+        <ul style="margin-top:8px;">
+          <li>Burp Suite, sqlmap, ffuf</li>
+          <li>Foundry, Hardhat, Remix IDE</li>
+          <li>Etherscan, slither, mythril</li>
+          <li>Practice Platforms</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 3: CTF MINDSET ── -->
+<div class="slide" id="s3">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--green);background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);">MINDSET</div>
+    <div class="slide-title neon-green" style="font-size:clamp(20px,3vw,38px);">The CTF Player's Mindset</div>
+    <div class="divider"></div>
+    <div class="quote">"Think like an attacker, act like a detective."</div>
+    <div class="grid-3" style="margin-top:24px;">
+      <div class="card green">
+        <h3 style="color:var(--green);">🔍 READ EVERYTHING</h3>
+        <p>Source code, comments, error messages, HTTP headers, ABI, bytecode — every byte is a clue.</p>
+      </div>
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">💡 QUESTION ASSUMPTIONS</h3>
+        <p>Developers assume users are honest. You are not a user — query boundaries, edge cases, and assumptions.</p>
+      </div>
+      <div class="card purple">
+        <h3 style="color:var(--purple);">⚡ ITERATE FAST</h3>
+        <p>Try, fail, analyse, adapt. Use checklists. Note everything you observe — even "nothing" is information.</p>
+      </div>
+      <div class="card orange">
+        <h3 style="color:var(--orange);">📖 KNOW THE CLASSICS</h3>
+        <p>90% of CTF challenges reuse known vulnerability patterns. Mastering fundamentals wins flags.</p>
+      </div>
+      <div class="card pink">
+        <h3 style="color:var(--pink);">🤝 TEAM + OSINT</h3>
+        <p>Divide categories. Use writeups from similar challenges. The CTF community is open — learn from it.</p>
+      </div>
+      <div class="card yellow">
+        <h3 style="color:var(--yellow);">🏁 FLAG ANATOMY</h3>
+        <p>Flags are usually: <code style="color:var(--green);font-size:12px;">FLAG{...}</code> or <code style="color:var(--green);font-size:12px;">CTF{...}</code>. Always check source, cookies, headers.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 4: WEB METHODOLOGY ── -->
+<div class="slide" id="s4">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--cyan);background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.2);">WEB · METHODOLOGY</div>
+    <div class="slide-title neon-cyan" style="font-size:clamp(18px,3vw,36px);">Web CTF — Attack Methodology</div>
+    <div class="divider"></div>
+    <ul class="step-list">
+      <li>
+        <div class="step-num c">1</div>
+        <div class="step-content">
+          <strong>Recon &amp; Fingerprint</strong>
+          <span>whatweb, wappalyzer → identify framework, server, CMS. Check robots.txt, sitemap, .git/, /.env, /backup.zip</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num c">2</div>
+        <div class="step-content">
+          <strong>Directory / Endpoint Enumeration</strong>
+          <span>ffuf -u URL/FUZZ -w wordlist · gobuster · dirsearch · also fuzz params: ?id=, ?page=, ?file=</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num c">3</div>
+        <div class="step-content">
+          <strong>Intercept &amp; Analyse Traffic</strong>
+          <span>Proxy with Burp Suite. Check all cookies, JWT tokens, hidden fields, custom headers (X-Forwarded-For, etc.)</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num c">4</div>
+        <div class="step-content">
+          <strong>View Source &amp; JS Analysis</strong>
+          <span>Read HTML comments, JS files, AJAX endpoints, GraphQL introspection, API keys hardcoded in JS</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num c">5</div>
+        <div class="step-content">
+          <strong>Inject &amp; Fuzz All Inputs</strong>
+          <span>Forms, URL params, headers, cookies — try SQLi, XSS, SSTI, command injection, path traversal payloads</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num c">6</div>
+        <div class="step-content">
+          <strong>Auth &amp; Session Analysis</strong>
+          <span>Decode JWT (jwt.io). Test role escalation. Default creds. Password reset flaws. IDOR on user IDs.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num c">7</div>
+        <div class="step-content">
+          <strong>Exploit &amp; Capture Flag</strong>
+          <span>Execute attack. Flag usually in: /flag, /etc/flag, database, admin panel, response headers.</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+
+  <!-- ── SLIDE 18: WEB CHECKLIST ── -->
+<div class="slide" id="s18">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--cyan);background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.2);">WEB · CHECKLIST</div>
+    <div class="slide-title neon-cyan" style="font-size:clamp(18px,3vw,34px);">Web CTF Quick Checklist</div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">🔍 Recon</h3>
+        <ul>
+          <li>☐ Check robots.txt, sitemap.xml</li>
+          <li>☐ Scan /.git, /.env, /backup, /.DS_Store</li>
+          <li>☐ Run ffuf/gobuster on all dirs</li>
+          <li>☐ View page source + all JS files</li>
+          <li>☐ Check all HTTP headers (Server, X-*, Set-Cookie)</li>
+          <li>☐ Inspect all cookies (base64?, JWT?)</li>
+          <li>☐ Check network tab for hidden APIs</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3 style="color:var(--green);">💉 Injection Testing</h3>
+        <ul>
+          <li>☐ Single quote <code>'</code> in every param</li>
+          <li>☐ XSS payload in every input field</li>
+          <li>☐ SSTI: <code>{{7*7}}</code> → 49? Jinja2/Twig/Pebble</li>
+          <li>☐ Path traversal: <code>../../../etc/passwd</code></li>
+          <li>☐ Command injection: <code>;id</code></li>
+          <li>☐ XXE if XML input exists</li>
+          <li>☐ HTTP header injection</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3 style="color:var(--purple);">🔐 Auth / Session</h3>
+        <ul>
+          <li>☐ Try admin/admin, admin/password, guest/guest</li>
+          <li>☐ Decode JWT at jwt.io → tamper payload</li>
+          <li>☐ Test alg:none JWT bypass</li>
+          <li>☐ IDOR: change user ID in requests</li>
+          <li>☐ Test account enumeration via different errors</li>
+          <li>☐ Check password reset token predictability</li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <h3 style="color:var(--orange);">🚩 Flag Locations</h3>
+        <ul>
+          <li>☐ /flag, /flag.txt, /etc/flag</li>
+          <li>☐ Database table named "flag" or "secret"</li>
+          <li>☐ HTTP response headers</li>
+          <li>☐ HTML source comments</li>
+          <li>☐ Admin panel after login bypass</li>
+          <li>☐ Env variables via RCE: env | grep FLAG</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 5: SQL INJECTION ── -->
+<div class="slide" id="s5">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--pink);background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);">WEB · ATTACK</div>
+    <div class="slide-title neon-pink" style="font-size:clamp(18px,3vw,36px);">SQL Injection</div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card pink">
+        <h3 style="color:var(--pink);">How It Works</h3>
+        <p>Unsanitised user input is concatenated into an SQL query. The attacker closes the string and appends malicious SQL to alter logic, dump data, or execute commands.</p>
+        <div style="margin-top:12px;">
+          <span class="badge badge-pink">Error-based</span>
+          <span class="badge badge-pink">Union-based</span>
+          <span class="badge badge-pink">Blind Boolean</span>
+          <span class="badge badge-pink">Time-based</span>
+          <span class="badge badge-pink">Out-of-band</span>
+        </div>
+      </div>
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">CTF Attack Steps</h3>
+        <ul>
+          <li>Inject <code style="color:var(--pink);">'</code> → look for SQL error</li>
+          <li>Try <code style="color:var(--pink);">' OR 1=1--</code> for auth bypass</li>
+          <li>UNION: find column count with ORDER BY</li>
+          <li>Dump: UNION SELECT table_name FROM information_schema.tables</li>
+          <li>Automate with sqlmap -u "URL?id=1" --dbs</li>
+        </ul>
+      </div>
+    </div>
+    <!-- SQLi Attack Flow Diagram -->
+    <div style="width:100%;max-width:900px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">▶ ATTACK FLOW</div>
+      <div style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap;justify-content:center;">
+        <div style="background:#0d0d1a;border:1px solid rgba(255,45,120,0.4);border-radius:8px 0 0 8px;padding:14px 18px;min-width:140px;text-align:center;">
+          <div style="font-size:22px;">🧑</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--pink);margin-top:4px;">ATTACKER</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Input Field</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 6px;">
+          <div style="color:var(--pink);font-size:18px;">→</div>
+          <div style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;white-space:nowrap;">admin'--</div>
+        </div>
+        <div style="background:#0d0d1a;border:1px solid rgba(0,245,255,0.3);padding:14px 18px;min-width:160px;text-align:center;">
+          <div style="font-size:22px;">🖥️</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--cyan);margin-top:4px;">WEB APP</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Builds SQL Query</div>
+          <div style="margin-top:8px;background:#050510;border-radius:4px;padding:6px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;text-align:left;"><span style="color:var(--purple);">SELECT</span> * <span style="color:var(--purple);">FROM</span> users<br><span style="color:var(--purple);">WHERE</span> user=<span style="color:var(--green);">'admin'</span><span style="color:var(--pink);">--</span><span style="color:var(--muted);">…</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 6px;">
+          <div style="color:var(--pink);font-size:18px;">→</div>
+          <div style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;">no password check</div>
+        </div>
+        <div style="background:#0d0d1a;border:1px solid rgba(0,255,136,0.3);padding:14px 18px;min-width:140px;text-align:center;">
+          <div style="font-size:22px;">🗄️</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--green);margin-top:4px;">DATABASE</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Executes Query</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 6px;">
+          <div style="color:var(--green);font-size:18px;">→</div>
+          <div style="font-size:9px;color:var(--green);font-family:'Share Tech Mono',monospace;">rows returned</div>
+        </div>
+        <div style="background:#0d0d1a;border:2px solid var(--green);border-radius:0 8px 8px 0;padding:14px 18px;min-width:120px;text-align:center;">
+          <div style="font-size:22px;">🏁</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--green);margin-top:4px;">LOGIN OK</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Flag captured</div>
+        </div>
+      </div>
+      <!-- UNION flow -->
+      <div style="margin-top:14px;background:#050510;border:1px solid #1a2040;border-radius:8px;padding:14px 20px;">
+        <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--muted);margin-bottom:8px;">UNION-BASED EXTRACTION FLOW</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span style="background:rgba(255,45,120,0.15);border:1px solid var(--pink);border-radius:4px;padding:4px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);">id=1'</span>
+          <span style="color:var(--muted);">→</span>
+          <span style="background:rgba(168,85,247,0.15);border:1px solid var(--purple);border-radius:4px;padding:4px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--purple);">ORDER BY 1,2,3… (find cols)</span>
+          <span style="color:var(--muted);">→</span>
+          <span style="background:rgba(0,245,255,0.15);border:1px solid var(--cyan);border-radius:4px;padding:4px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);">UNION SELECT null,table_name,null</span>
+          <span style="color:var(--muted);">→</span>
+          <span style="background:rgba(0,255,136,0.15);border:1px solid var(--green);border-radius:4px;padding:4px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);">🏁 FLAG</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 6: XSS ── -->
+<div class="slide" id="s6">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--orange);background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);">WEB · ATTACK</div>
+    <div class="slide-title neon-pink" style="font-size:clamp(18px,3vw,36px);">Cross-Site Scripting (XSS)</div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-bottom:16px;">
+      <div class="card orange">
+        <h3 style="color:var(--orange);">Reflected XSS</h3>
+        <p>Payload in URL param, reflected in response unsanitised. Works with victim clicking crafted link.</p>
+      </div>
+      <div class="card pink">
+        <h3 style="color:var(--pink);">Stored XSS</h3>
+        <p>Payload saved to database. Every visitor who views the content executes the script. Highest impact.</p>
+      </div>
+      <div class="card purple">
+        <h3 style="color:var(--purple);">DOM-based XSS</h3>
+        <p>Payload processed by client-side JS (innerHTML, document.write). No server interaction needed.</p>
+      </div>
+    </div>
+    <!-- XSS Flow Diagram -->
+    <div style="width:100%;max-width:900px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">▶ STORED XSS ATTACK FLOW (most impactful)</div>
+      <div style="display:flex;gap:0;align-items:stretch;flex-wrap:wrap;justify-content:center;">
+        <div style="background:#0d0d1a;border:1px solid rgba(255,107,53,0.4);border-radius:8px 0 0 8px;padding:12px 14px;text-align:center;min-width:110px;">
+          <div style="font-size:22px;">😈</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--orange);">ATTACKER</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Posts payload</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;"><span style="color:var(--orange);font-size:16px;">→</span></div>
+        <div style="background:#0d0d1a;border:1px solid rgba(0,245,255,0.3);padding:12px 14px;text-align:center;min-width:130px;">
+          <div style="font-size:22px;">🗄️</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--cyan);">DATABASE</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Stores payload</div>
+          <div style="margin-top:6px;background:#050510;border-radius:4px;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--orange);">&lt;script&gt;...&lt;/script&gt;</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;"><span style="color:var(--muted);font-size:16px;">→</span></div>
+        <div style="background:#0d0d1a;border:1px solid rgba(168,85,247,0.3);padding:12px 14px;text-align:center;min-width:130px;">
+          <div style="font-size:22px;">🤖</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--purple);">ADMIN BOT</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Visits page</div>
+          <div style="font-size:10px;color:var(--pink);margin-top:4px;">executes script</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;"><span style="color:var(--pink);font-size:16px;">→</span></div>
+        <div style="background:#0d0d1a;border:1px solid rgba(255,45,120,0.4);padding:12px 14px;text-align:center;min-width:130px;">
+          <div style="font-size:22px;">🍪</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--pink);">COOKIE SENT</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">to attacker server</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;"><span style="color:var(--green);font-size:16px;">→</span></div>
+        <div style="background:#0d0d1a;border:2px solid var(--green);border-radius:0 8px 8px 0;padding:12px 14px;text-align:center;min-width:100px;">
+          <div style="font-size:22px;">🏁</div>
+          <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--green);">FLAG</div>
+        </div>
+      </div>
+      <!-- XSS context break -->
+      <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <div style="background:#050510;border:1px solid rgba(255,107,53,0.3);border-radius:6px;padding:10px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--orange);margin-bottom:6px;">HTML CONTEXT</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">&lt;img src=x onerror=alert(1)&gt;</div>
+        </div>
+        <div style="background:#050510;border:1px solid rgba(168,85,247,0.3);border-radius:6px;padding:10px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--purple);margin-bottom:6px;">ATTR CONTEXT</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">"&gt;&lt;script&gt;alert(1)&lt;/script&gt;</div>
+        </div>
+        <div style="background:#050510;border:1px solid rgba(0,245,255,0.3);border-radius:6px;padding:10px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);margin-bottom:6px;">JS CONTEXT</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">'-alert(1)-'</div>
+        </div>
+      </div>
+    </div>
+    <div class="card cyan" style="max-width:900px;margin-top:0;">
+      <h3 style="color:var(--cyan);">CTF XSS Steps</h3>
+      <p>1. Find reflection point → 2. Break out of context (&lt;tag attr="HERE"&gt;) → 3. Craft payload → 4. If admin bot: steal session cookie or redirect to /flag → 5. Submit to bot URL</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 7: SSRF + LFI ── -->
+<div class="slide" id="s7">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--cyan);background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.2);">WEB · ATTACK</div>
+    <div class="slide-title neon-cyan" style="font-size:clamp(18px,3vw,34px);">SSRF &amp; File Inclusion</div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">SSRF — Server-Side Request Forgery</h3>
+        <p style="margin-bottom:10px;">Server fetches a URL supplied by the user. Trick it to fetch internal services.</p>
+        <ul>
+          <li>Target: <code style="color:var(--cyan);">http://127.0.0.1/admin</code></li>
+          <li>Cloud metadata: <code style="color:var(--cyan);">http://169.254.169.254/latest/meta-data/</code></li>
+          <li>Bypass: <code style="color:var(--cyan);">http://0x7f000001/</code> or DNS rebinding</li>
+          <li>Scheme abuse: <code style="color:var(--cyan);">file:///etc/passwd</code>, <code style="color:var(--cyan);">gopher://</code></li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3 style="color:var(--green);">LFI — Local File Inclusion</h3>
+        <p style="margin-bottom:10px;">Server includes a file based on user input. Read system files or achieve RCE.</p>
+        <ul>
+          <li>Basic: <code style="color:var(--green);">?page=../../../../etc/passwd</code></li>
+          <li>Null byte (old PHP): <code style="color:var(--green);">?page=../../etc/passwd%00</code></li>
+          <li>Log poisoning → RCE via Apache log</li>
+          <li>PHP wrapper: <code style="color:var(--green);">php://filter/convert.base64-encode/resource=index.php</code></li>
+        </ul>
+      </div>
+    </div>
+    <!-- SSRF + LFI Diagrams -->
+    <div style="width:100%;max-width:900px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <!-- SSRF -->
+      <div style="background:#050510;border:1px solid rgba(0,245,255,0.3);border-radius:8px;padding:14px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:2px;margin-bottom:10px;">SSRF FLOW</div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+          <div style="background:rgba(255,45,120,0.12);border:1px solid var(--pink);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);text-align:center;">😈 Attacker<br><span style="color:var(--muted);font-size:9px;">sends url=http://127.0.0.1/admin</span></div>
+          <div style="color:var(--cyan);font-size:20px;">↓</div>
+          <div style="background:rgba(0,245,255,0.08);border:1px solid var(--cyan);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);text-align:center;">🌐 Web Server<br><span style="color:var(--muted);font-size:9px;">fetches the URL itself</span></div>
+          <div style="color:var(--cyan);font-size:20px;">↓</div>
+          <div style="background:rgba(0,255,136,0.08);border:1px solid var(--green);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);text-align:center;">🔒 Internal Service<br><span style="color:var(--muted);font-size:9px;">http://127.0.0.1:8080/admin</span></div>
+          <div style="color:var(--green);font-size:20px;">↓</div>
+          <div style="background:rgba(0,255,136,0.15);border:2px solid var(--green);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);text-align:center;">🏁 FLAG returned</div>
+        </div>
+      </div>
+      <!-- LFI -->
+      <div style="background:#050510;border:1px solid rgba(0,255,136,0.3);border-radius:8px;padding:14px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:10px;">LFI FLOW</div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+          <div style="background:rgba(255,45,120,0.12);border:1px solid var(--pink);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);text-align:center;">😈 Attacker<br><span style="color:var(--muted);font-size:9px;">?page=../../../etc/passwd</span></div>
+          <div style="color:var(--green);font-size:20px;">↓</div>
+          <div style="background:rgba(0,245,255,0.08);border:1px solid var(--cyan);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);text-align:center;">🖥️ PHP include()<br><span style="color:var(--muted);font-size:9px;">resolves path traversal</span></div>
+          <div style="color:var(--green);font-size:20px;">↓</div>
+          <div style="background:rgba(168,85,247,0.08);border:1px solid var(--purple);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--purple);text-align:center;">📄 php://filter<br><span style="color:var(--muted);font-size:9px;">base64-encode source</span></div>
+          <div style="color:var(--green);font-size:20px;">↓</div>
+          <div style="background:rgba(0,255,136,0.15);border:2px solid var(--green);border-radius:6px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);text-align:center;">🏁 FLAG in file</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 8: IDOR + JWT ── -->
+<div class="slide" id="s8">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--purple);background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);">WEB · ATTACK</div>
+    <div class="slide-title neon-purple" style="font-size:clamp(18px,3vw,34px);">IDOR &amp; JWT Auth Bypass</div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card purple">
+        <h3 style="color:var(--purple);">IDOR — Insecure Direct Object Reference</h3>
+        <p style="margin-bottom:10px;">Object references (IDs) expose privileged resources without authorisation check.</p>
+        <ul>
+          <li>Change: <code style="color:var(--purple);">/api/user/1337</code> → <code style="color:var(--purple);">/api/user/1</code> (admin)</li>
+          <li>Fuzz numeric IDs: 0, 1, 99, -1, 0x1</li>
+          <li>GUIDs: predict / brute-force patterns</li>
+          <li>Check: GET vs POST params, JSON body fields</li>
+        </ul>
+      </div>
+      <div class="card yellow">
+        <h3 style="color:var(--yellow);">JWT — JSON Web Token Attacks</h3>
+        <ul>
+          <li><strong>alg:none</strong> — remove signature, set alg to "none"</li>
+          <li><strong>RS256→HS256</strong> — use public key as HMAC secret</li>
+          <li><strong>Weak secret</strong> — brute-force with hashcat/jwt_tool</li>
+          <li><strong>kid injection</strong> — <code style="color:var(--yellow);">kid: ../../dev/null</code></li>
+        </ul>
+      </div>
+    </div>
+    <!-- JWT Anatomy + Attack Diagram -->
+    <div style="width:100%;max-width:900px;">
+      <!-- JWT structure -->
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">JWT STRUCTURE</div>
+      <div style="display:flex;gap:2px;align-items:stretch;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:100px;background:rgba(168,85,247,0.12);border:1px solid var(--purple);border-radius:6px 0 0 6px;padding:10px 12px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--purple);margin-bottom:4px;">HEADER</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);">alg, typ</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--purple);margin-top:4px;">eyJhbGci…</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;color:var(--muted);">.</div>
+        <div style="flex:1.5;min-width:130px;background:rgba(0,245,255,0.12);border:1px solid var(--cyan);padding:10px 12px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);margin-bottom:4px;">PAYLOAD</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);">user, role, exp</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--cyan);margin-top:4px;">eyJ1c2Vy…</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;color:var(--muted);">.</div>
+        <div style="flex:1;min-width:100px;background:rgba(0,255,136,0.12);border:1px solid var(--green);border-radius:0 6px 6px 0;padding:10px 12px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);margin-bottom:4px;">SIGNATURE</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);">HMAC / RSA</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--green);margin-top:4px;">SflKxwR…</div>
+        </div>
+      </div>
+      <!-- attacks -->
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">ATTACK TECHNIQUES</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#050510;border:1px solid rgba(255,45,120,0.4);border-radius:6px;padding:10px 14px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--pink);margin-bottom:6px;">① ALG:NONE BYPASS</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="background:rgba(168,85,247,0.15);border:1px solid var(--purple);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--purple);">alg: HS256</span>
+            <span style="color:var(--pink);font-size:12px;">→</span>
+            <span style="background:rgba(255,45,120,0.15);border:1px solid var(--pink);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--pink);">alg: none</span>
+            <span style="color:var(--pink);font-size:12px;">→</span>
+            <span style="background:rgba(0,255,136,0.15);border:1px solid var(--green);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--green);">empty sig ✓</span>
+          </div>
+        </div>
+        <div style="background:#050510;border:1px solid rgba(255,215,0,0.4);border-radius:6px;padding:10px 14px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--yellow);margin-bottom:6px;">② WEAK SECRET CRACK</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="background:rgba(255,215,0,0.1);border:1px solid var(--yellow);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--yellow);">TOKEN</span>
+            <span style="color:var(--muted);font-size:12px;">→</span>
+            <span style="background:rgba(168,85,247,0.1);border:1px solid var(--purple);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--purple);">hashcat / jwt_tool</span>
+            <span style="color:var(--muted);font-size:12px;">→</span>
+            <span style="background:rgba(0,255,136,0.15);border:1px solid var(--green);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--green);">secret found ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 9: CMD INJECTION + FILE UPLOAD ── -->
+<div class="slide" id="s9">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--pink);background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);">WEB · ATTACK</div>
+    <div class="slide-title neon-pink" style="font-size:clamp(18px,3vw,34px);">Command Injection &amp; File Upload</div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card pink">
+        <h3 style="color:var(--pink);">Command Injection</h3>
+        <p style="margin-bottom:10px;">App passes user input to OS shell functions (system(), exec(), popen()).</p>
+        <ul>
+          <li>Separator: <code style="color:var(--pink);">; cat /flag</code></li>
+          <li>Pipe: <code style="color:var(--pink);">| id</code></li>
+          <li>Backtick: <code style="color:var(--pink);">`cat /etc/passwd`</code></li>
+          <li>Subshell: <code style="color:var(--pink);">$(cat /flag)</code></li>
+          <li>Blind: time-based <code style="color:var(--pink);">; sleep 5</code></li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <h3 style="color:var(--orange);">Malicious File Upload</h3>
+        <ul>
+          <li>Upload .php webshell disguised as image</li>
+          <li>Bypass MIME check: change Content-Type to image/jpeg</li>
+          <li>Double extension: <code style="color:var(--orange);">shell.php.jpg</code></li>
+          <li>Null byte: <code style="color:var(--orange);">shell.php%00.jpg</code></li>
+          <li>Polyglot files (valid JPEG + PHP code)</li>
+          <li>.htaccess upload to re-enable PHP in directory</li>
+        </ul>
+      </div>
+    </div>
+    <!-- CMDi + Upload Flow Diagrams -->
+    <div style="width:100%;max-width:900px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <!-- CMDi -->
+      <div style="background:#050510;border:1px solid rgba(255,45,120,0.3);border-radius:8px;padding:14px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--pink);letter-spacing:2px;margin-bottom:10px;">CMD INJECTION FLOW</div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div style="background:rgba(255,45,120,0.12);border:1px solid var(--pink);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--pink);flex:1;text-align:center;">User Input<br><span style="color:var(--muted);font-size:9px;">host=8.8.8.8</span></div>
+            <span style="color:var(--pink);font-size:18px;">→</span>
+            <div style="background:rgba(0,245,255,0.08);border:1px solid var(--cyan);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);flex:1;text-align:center;">App builds<br><span style="color:var(--muted);font-size:9px;">ping [input]</span></div>
+          </div>
+          <div style="text-align:center;color:var(--pink);font-size:18px;">↓ inject ; cat /flag</div>
+          <div style="background:rgba(0,255,136,0.08);border:1px solid var(--green);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;text-align:center;">
+            <span style="color:var(--green);">ping 8.8.8.8 </span><span style="color:var(--pink);font-weight:bold;">; cat /flag</span>
+            <div style="color:var(--muted);font-size:9px;margin-top:4px;">OS executes both commands</div>
+          </div>
+          <div style="text-align:center;color:var(--green);font-size:18px;">↓</div>
+          <div style="background:rgba(0,255,136,0.15);border:2px solid var(--green);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);text-align:center;">🏁 FLAG output</div>
+        </div>
+      </div>
+      <!-- File Upload -->
+      <div style="background:#050510;border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:14px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:2px;margin-bottom:10px;">FILE UPLOAD RCE FLOW</div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;">
+          <div style="background:rgba(255,45,120,0.12);border:1px solid var(--pink);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--pink);text-align:center;">Upload shell.php<br><span style="color:var(--muted);font-size:9px;">Content-Type: image/jpeg</span></div>
+          <div style="text-align:center;color:var(--orange);font-size:18px;">↓ bypass MIME check</div>
+          <div style="background:rgba(0,245,255,0.08);border:1px solid var(--cyan);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);text-align:center;">File saved to<br><span style="color:var(--muted);font-size:9px;">/uploads/shell.php</span></div>
+          <div style="text-align:center;color:var(--orange);font-size:18px;">↓ access URL</div>
+          <div style="background:rgba(168,85,247,0.08);border:1px solid var(--purple);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--purple);text-align:center;">/uploads/shell.php?cmd=cat /flag<br><span style="color:var(--muted);font-size:9px;">PHP interprets as code</span></div>
+          <div style="text-align:center;color:var(--green);font-size:18px;">↓</div>
+          <div style="background:rgba(0,255,136,0.15);border:2px solid var(--green);border-radius:5px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);text-align:center;">🏁 FLAG via RCE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 10: BLOCKCHAIN INTRO ── -->
+<div class="slide" id="s10">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--purple);background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);">BLOCKCHAIN · INTRO</div>
+    <div class="slide-title neon-purple" style="font-size:clamp(18px,3vw,36px);">Blockchain CTF Fundamentals</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="card purple">
+        <h3 style="color:var(--purple);">What Is a Smart Contract?</h3>
+        <p>Self-executing code deployed on Ethereum (EVM). Written in Solidity. Once deployed the code is immutable but state can change. Holds real ETH/tokens — bugs = lost funds or stolen flags.</p>
+      </div>
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">CTF Blockchain Setup</h3>
+        <ul>
+          <li>Challenge gives you: contract address + ABI (or source)</li>
+          <li>Goal: drain contract, call hidden function, set a variable</li>
+          <li>Use: Foundry (cast/forge), Hardhat, Remix IDE</li>
+          <li>Testnet: Goerli / Sepolia / local Anvil/Ganache</li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="card green">
+        <h3 style="color:var(--green);">Key Concepts</h3>
+        <ul>
+          <li>msg.sender / tx.origin</li>
+          <li>msg.value (ETH sent)</li>
+          <li>payable functions</li>
+          <li>fallback() / receive()</li>
+          <li>Storage slots (0, 1, 2…)</li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <h3 style="color:var(--orange);">Reading State</h3>
+        <ul>
+          <li>cast storage &lt;addr&gt; 0 (slot 0)</li>
+          <li>eth_getStorageAt RPC</li>
+          <li>Decompile bytecode: dedaub.com</li>
+          <li>All blockchain storage is PUBLIC</li>
+        </ul>
+      </div>
+      <div class="card pink">
+        <h3 style="color:var(--pink);">CTF Interaction</h3>
+        <ul>
+          <li>cast send &lt;addr&gt; "func()" —value 1ether</li>
+          <li>cast call &lt;addr&gt; "isSolved()(bool)"</li>
+          <li>Deploy attacker contract via forge</li>
+          <li>Read events: cast logs</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 11: BLOCKCHAIN METHODOLOGY ── -->
+<div class="slide" id="s11">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--purple);background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);">BLOCKCHAIN · METHODOLOGY</div>
+    <div class="slide-title neon-purple" style="font-size:clamp(18px,3vw,36px);">Blockchain CTF — Solve Methodology</div>
+    <div class="divider"></div>
+    <ul class="step-list">
+      <li>
+        <div class="step-num p">1</div>
+        <div class="step-content">
+          <strong>Get the Source / Decompile</strong>
+          <span>Challenge gives Solidity source or just bytecode. If bytecode only: use dedaub.com, panoramix, or heimdall to decompile. Read every function and modifier carefully.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num p">2</div>
+        <div class="step-content">
+          <strong>Identify the Win Condition</strong>
+          <span>Find the function that checks victory: isSolved(), level == 100, balance == 0, owner == you. Work backwards from there.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num p">3</div>
+        <div class="step-content">
+          <strong>Read All Storage Slots</strong>
+          <span>cast storage &lt;addr&gt; 0 through N. Private variables are STILL readable on-chain. Passwords, seeds, flags stored in state are trivially leaked.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num p">4</div>
+        <div class="step-content">
+          <strong>Check Known Vuln Patterns</strong>
+          <span>Reentrancy, integer overflow/underflow, access control flaws, flash loan attacks — match each pattern against the source code.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num p">5</div>
+        <div class="step-content">
+          <strong>Write Attacker Contract</strong>
+          <span>Write a Solidity attacker contract in Foundry or Remix. Use anvil --fork-url for local testing before sending on testnet.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-num p">6</div>
+        <div class="step-content">
+          <strong>Execute &amp; Verify</strong>
+          <span>forge script / cast send the attack. Verify: cast call isSolved() returns true. Retrieve flag from emitted event or website.</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+
+  
+<!-- ── SLIDE 19: BLOCKCHAIN CHECKLIST ── -->
+<div class="slide" id="s19">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--purple);background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);">BLOCKCHAIN · CHECKLIST</div>
+    <div class="slide-title neon-purple" style="font-size:clamp(18px,3vw,34px);">Blockchain CTF Quick Checklist</div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div class="card purple">
+        <h3 style="color:var(--purple);">📄 Source Analysis</h3>
+        <ul>
+          <li>☐ pragma solidity version → &lt;0.8? overflow possible</li>
+          <li>☐ Identify win condition (isSolved, owner check)</li>
+          <li>☐ List all public/external functions</li>
+          <li>☐ Find all ETH transfers (.call, .send, .transfer)</li>
+          <li>☐ Spot all storage reads that should be private</li>
+          <li>☐ Find all delegatecall / call usage</li>
+          <li>☐ Check modifiers carefully</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3 style="color:var(--green);">🔑 Common Patterns</h3>
+        <ul>
+          <li>☐ Reentrancy: sends ETH before balance update?</li>
+          <li>☐ Integer overflow: pragma &lt;0.8 with no SafeMath?</li>
+          <li>☐ Access control: missing onlyOwner / unlocked initializer?</li>
+          <li>☐ Flash loan: spot-price oracle manipulable?</li>
+          <li>☐ Single-block governance vote bypass?</li>
+          <li>☐ Unchecked external call return value?</li>
+        </ul>
+      </div>
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">🛠️ On-chain Recon</h3>
+        <ul>
+          <li>☐ Read all storage slots: cast storage addr 0..10</li>
+          <li>☐ Check tx history on Etherscan</li>
+          <li>☐ Decode all input data of past txs</li>
+          <li>☐ Run slither for automated detection</li>
+          <li>☐ Check contract ETH balance</li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <h3 style="color:var(--orange);">⚡ Execution</h3>
+        <ul>
+          <li>☐ Fork mainnet/testnet with anvil --fork-url</li>
+          <li>☐ Write &amp; test attack in forge test</li>
+          <li>☐ Verify isSolved() = true locally first</li>
+          <li>☐ Deploy to testnet, execute, verify</li>
+          <li>☐ Submit transaction hash / greet challenge</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 12: REENTRANCY ── -->
+<div class="slide" id="s12">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--pink);background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);">BLOCKCHAIN · VULN</div>
+    <div class="slide-title neon-pink" style="font-size:clamp(18px,3vw,34px);">Reentrancy Attack</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div class="card pink">
+        <h3 style="color:var(--pink);">What Happens</h3>
+        <p>Vulnerable contract sends ETH <em>before</em> updating its balance. Attacker's fallback() re-calls withdraw() recursively, draining funds. Famous: The DAO hack (2016) — $60M lost.</p>
+      </div>
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">Spot It Fast</h3>
+        <ul>
+          <li>ETH transfer before state update</li>
+          <li>.call{value}("") usage</li>
+          <li>No ReentrancyGuard</li>
+          <li>withdraw() doesn't follow CEI pattern</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Reentrancy recursive call diagram -->
+    <div style="width:100%;max-width:900px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">▶ REENTRANCY RECURSIVE CALL DIAGRAM</div>
+      <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+        <!-- Attacker column -->
+        <div style="flex:1;min-width:160px;">
+          <div style="background:rgba(255,45,120,0.12);border:1px solid var(--pink);border-radius:8px 8px 0 0;padding:10px 14px;text-align:center;">
+            <div style="font-size:20px;">😈</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);">ATTACKER</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">Attack Contract</div>
+          </div>
+          <div style="border-left:2px dashed var(--pink);margin-left:50%;height:28px;"></div>
+          <div style="background:#050510;border:1px solid rgba(255,45,120,0.3);border-radius:4px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">① deposit(1 ETH)</div>
+          <div style="border-left:2px dashed var(--pink);margin-left:50%;height:14px;"></div>
+          <div style="background:#050510;border:1px solid rgba(255,45,120,0.3);border-radius:4px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">② withdraw()</div>
+          <div style="border-left:2px dashed var(--green);margin-left:50%;height:14px;"></div>
+          <div style="background:#050510;border:1px solid rgba(0,255,136,0.3);border-radius:4px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">⑤ fallback() triggered<br><span style="color:var(--pink);">→ calls withdraw() again</span></div>
+          <div style="border-left:2px dashed var(--green);margin-left:50%;height:14px;"></div>
+          <div style="background:rgba(0,255,136,0.15);border:2px solid var(--green);border-radius:4px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);text-align:center;">🏁 Vault drained!</div>
+        </div>
+        <!-- arrows -->
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding-top:50px;gap:28px;">
+          <div style="color:var(--pink);font-size:22px;text-align:center;">⟶<br><span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;">call</span></div>
+          <div style="color:var(--green);font-size:22px;text-align:center;">⟵<br><span style="font-size:9px;color:var(--green);font-family:'Share Tech Mono',monospace;">ETH sent</span></div>
+          <div style="color:var(--pink);font-size:22px;text-align:center;">⟶<br><span style="font-size:9px;color:var(--pink);font-family:'Share Tech Mono',monospace;">re-enter!</span></div>
+        </div>
+        <!-- Vault column -->
+        <div style="flex:1;min-width:160px;">
+          <div style="background:rgba(0,245,255,0.08);border:1px solid var(--cyan);border-radius:8px 8px 0 0;padding:10px 14px;text-align:center;">
+            <div style="font-size:20px;">🏦</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);">VAULT CONTRACT</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">Vulnerable</div>
+          </div>
+          <div style="border-left:2px dashed var(--cyan);margin-left:50%;height:28px;"></div>
+          <div style="background:#050510;border:1px solid rgba(0,245,255,0.3);border-radius:4px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">③ send ETH to caller</div>
+          <div style="border-left:2px dashed var(--cyan);margin-left:50%;height:14px;"></div>
+          <div style="background:#050510;border:1px solid rgba(255,215,0,0.3);border-radius:4px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--yellow);">④ balance NOT updated yet<br><span style="font-size:9px;color:var(--pink);">← state update is here</span></div>
+          <div style="border-left:2px dashed var(--yellow);margin-left:50%;height:14px;"></div>
+          <div style="background:rgba(255,215,0,0.08);border:1px dashed var(--yellow);border-radius:4px;padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--yellow);">balance = 0 (too late!)</div>
+        </div>
+      </div>
+      <!-- CEI fix -->
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;background:#050510;border:1px solid rgba(0,255,136,0.3);border-radius:6px;padding:10px 16px;flex-wrap:wrap;">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">✅ FIX — CEI Pattern:</span>
+        <span style="background:rgba(255,45,120,0.1);border:1px solid var(--pink);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--pink);">① Check</span>
+        <span style="color:var(--muted);">→</span>
+        <span style="background:rgba(0,245,255,0.1);border:1px solid var(--cyan);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);">② Effect (update state)</span>
+        <span style="color:var(--muted);">→</span>
+        <span style="background:rgba(0,255,136,0.1);border:1px solid var(--green);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">③ Interact (send ETH)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 13: OVERFLOW ── -->
+<div class="slide" id="s13">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--orange);background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);">BLOCKCHAIN · VULN</div>
+    <div class="slide-title" style="font-size:clamp(18px,3vw,34px);color:var(--orange);text-shadow:0 0 30px rgba(255,107,53,0.6);">Integer Overflow / Underflow</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div class="card orange">
+        <h3 style="color:var(--orange);">The Bug</h3>
+        <p>Before Solidity 0.8, uint256 wraps around silently. uint8(255) + 1 = 0 (overflow). uint(0) - 1 = 2^256-1 (underflow). CTF contracts often use old Solidity to enable this.</p>
+        <div style="margin-top:10px;">
+          <span class="badge badge-orange">Solidity &lt; 0.8.0</span>
+          <span class="badge badge-orange">SafeMath not used</span>
+        </div>
+      </div>
+      <div class="card green">
+        <h3 style="color:var(--green);">Exploit Pattern</h3>
+        <ul>
+          <li>Find uint subtraction: balance -= amount</li>
+          <li>Send amount &gt; balance → underflow → huge balance</li>
+          <li>Or overflow a uint8 counter to reset to 0</li>
+          <li>Check: pragma solidity ^0.6 or ^0.7 → vulnerable</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Overflow number line diagram -->
+    <div style="width:100%;max-width:900px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">▶ UINT8 OVERFLOW / UNDERFLOW VISUALISED</div>
+      <!-- Overflow -->
+      <div style="background:#050510;border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:14px 18px;margin-bottom:10px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--orange);margin-bottom:10px;">OVERFLOW — uint8(255) + 1</div>
+        <div style="position:relative;height:36px;">
+          <div style="position:absolute;left:0;right:0;top:50%;height:3px;background:linear-gradient(90deg,var(--orange),var(--pink));"></div>
+          <div style="position:absolute;left:0;top:0;text-align:center;">
+            <div style="background:rgba(0,255,136,0.2);border:1px solid var(--green);border-radius:4px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">0</div>
+          </div>
+          <div style="position:absolute;left:50%;transform:translateX(-50%);top:0;text-align:center;">
+            <div style="background:rgba(0,245,255,0.15);border:1px solid var(--cyan);border-radius:4px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);">128</div>
+          </div>
+          <div style="position:absolute;right:0;top:0;text-align:center;">
+            <div style="background:rgba(255,107,53,0.2);border:1px solid var(--orange);border-radius:4px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--orange);">255</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <span style="background:rgba(255,107,53,0.15);border:1px solid var(--orange);border-radius:4px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--orange);">255</span>
+          <span style="color:var(--pink);font-size:18px;">+ 1</span>
+          <span style="color:var(--muted);font-size:18px;">→</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);">wraps around</span>
+          <span style="color:var(--muted);font-size:18px;">→</span>
+          <span style="background:rgba(0,255,136,0.2);border:2px solid var(--green);border-radius:4px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);">0 ⚠️</span>
+        </div>
+      </div>
+      <!-- Underflow -->
+      <div style="background:#050510;border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:14px 18px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--purple);margin-bottom:10px;">UNDERFLOW — uint256(0) - 1</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="background:rgba(168,85,247,0.15);border:1px solid var(--purple);border-radius:4px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--purple);">balance = 0</span>
+          <span style="color:var(--pink);font-size:16px;">- large amount</span>
+          <span style="color:var(--muted);font-size:16px;">→</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);">wraps to max</span>
+          <span style="color:var(--muted);font-size:16px;">→</span>
+          <span style="background:rgba(255,45,120,0.15);border:2px solid var(--pink);border-radius:4px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);">2²⁵⁶−1 ≈ ∞ ⚠️</span>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">CTF exploit:</span>
+          <span style="background:rgba(255,107,53,0.1);border:1px solid var(--orange);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--orange);">lockTime = N</span>
+          <span style="color:var(--muted);">→</span>
+          <span style="background:rgba(0,245,255,0.1);border:1px solid var(--cyan);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);">add(2²⁵⁶ − N)</span>
+          <span style="color:var(--muted);">→</span>
+          <span style="background:rgba(0,255,136,0.15);border:1px solid var(--green);border-radius:4px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">lockTime = 0 → withdraw!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 14: ACCESS CONTROL FLAWS ── -->
+<div class="slide" id="s14">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--cyan);background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.2);">BLOCKCHAIN · VULN</div>
+    <div class="slide-title neon-cyan" style="font-size:clamp(18px,3vw,34px);">Access Control Flaws</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">What Goes Wrong</h3>
+        <ul>
+          <li>Missing onlyOwner modifier → anyone calls admin fn</li>
+          <li>Unlocked initializer → attacker re-runs initialize() to seize ownership</li>
+          <li>Wrong visibility: public instead of internal/private</li>
+          <li>Role checks on wrong variable (role vs. address)</li>
+          <li>Look for: initialize(), setOwner(), changeOwner(), mint()</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3 style="color:var(--purple);">CTF Attack Steps</h3>
+        <ul>
+          <li>List every public/external function — spot unprotected admin fns</li>
+          <li>Check if initialize() is callable again → call it with your address</li>
+          <li>Look for functions that change owner/admin with no restriction</li>
+          <li>OpenZeppelin Ownable: check transferOwnership() is guarded</li>
+          <li>After gaining owner: call privileged functions to win challenge</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Access Control attack diagram -->
+    <div style="width:100%;max-width:900px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">▶ UNPROTECTED INITIALIZER EXPLOIT FLOW</div>
+      <div style="display:flex;gap:0;align-items:stretch;flex-wrap:wrap;justify-content:center;">
+        <div style="background:rgba(255,45,120,0.1);border:1px solid var(--pink);border-radius:8px 0 0 8px;padding:12px 16px;min-width:130px;text-align:center;">
+          <div style="font-size:22px;">😈</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);">ATTACKER</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 8px;">
+          <div style="color:var(--pink);font-size:16px;">→</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--pink);white-space:nowrap;">initialize(attacker)</div>
+        </div>
+        <div style="background:#0d0d1a;border:1px solid rgba(0,245,255,0.3);padding:12px 16px;min-width:150px;text-align:center;">
+          <div style="font-size:22px;">📄</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);">CONTRACT</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:4px;">no initialized guard</div>
+          <div style="background:rgba(255,215,0,0.1);border:1px solid var(--yellow);border-radius:4px;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--yellow);margin-top:6px;">owner = attacker ✓</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 8px;">
+          <div style="color:var(--green);font-size:16px;">→</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--green);white-space:nowrap;">now owner</div>
+        </div>
+        <div style="background:#0d0d1a;border:1px solid rgba(168,85,247,0.3);padding:12px 16px;min-width:150px;text-align:center;">
+          <div style="font-size:22px;">🔓</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--purple);">CALL withdrawAll()</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:4px;">no onlyOwner check</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 8px;">
+          <div style="color:var(--green);font-size:16px;">→</div>
+        </div>
+        <div style="background:rgba(0,255,136,0.1);border:2px solid var(--green);border-radius:0 8px 8px 0;padding:12px 16px;min-width:110px;text-align:center;">
+          <div style="font-size:22px;">🏁</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);">DRAINED</div>
+        </div>
+      </div>
+      <!-- visibility bug table -->
+      <div style="margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-radius:6px;padding:8px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">public</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px;">anyone calls</div>
+        </div>
+        <div style="background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.3);border-radius:6px;padding:8px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);">external</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px;">only outside</div>
+        </div>
+        <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-radius:6px;padding:8px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--purple);">internal</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px;">this + children</div>
+        </div>
+        <div style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.3);border-radius:6px;padding:8px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--pink);">private</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px;">this only</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 15: FLASH LOAN ATTACKS ── -->
+<div class="slide" id="s15">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--purple);background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);">BLOCKCHAIN · VULN</div>
+    <div class="slide-title neon-purple" style="font-size:clamp(18px,3vw,34px);">Flash Loan Attacks</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div class="card purple">
+        <h3 style="color:var(--purple);">What Is a Flash Loan?</h3>
+        <p style="margin-bottom:10px;">Borrow any amount of tokens with <strong>zero collateral</strong> — as long as it is repaid within the <em>same transaction</em>. If repayment fails, the whole tx reverts.</p>
+        <ul>
+          <li>Available from: Aave, dYdX, Uniswap V3</li>
+          <li>No credit check, no collateral required</li>
+          <li>Borrow millions of $ for a few seconds</li>
+          <li>Classic CTF: drain a DeFi pool in one tx</li>
+        </ul>
+      </div>
+      <div class="card cyan">
+        <h3 style="color:var(--cyan);">Attack Flow</h3>
+        <ul>
+          <li>1️⃣ Borrow huge amount (e.g. 1M USDC) from flash loan provider</li>
+          <li>2️⃣ Manipulate price oracle (spot price) with the borrowed funds</li>
+          <li>3️⃣ Exploit mispriced collateral → drain under-collateralised borrows</li>
+          <li>4️⃣ Or: pass a governance vote with borrowed voting tokens</li>
+          <li>5️⃣ Repay flash loan + fee → keep profit</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Flash Loan single-tx timeline -->
+    <div style="width:100%;max-width:900px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">▶ EVERYTHING HAPPENS IN ONE TRANSACTION — reverts if repayment fails</div>
+      <div style="position:relative;padding-left:20px;">
+        <!-- vertical line -->
+        <div style="position:absolute;left:28px;top:10px;bottom:10px;width:2px;background:linear-gradient(180deg,var(--purple),var(--cyan),var(--green));"></div>
+        <!-- steps -->
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:14px;align-items:center;">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:9px;color:#000;flex-shrink:0;">1</div>
+            <div style="background:#0d0d1a;border:1px solid rgba(168,85,247,0.4);border-radius:6px;padding:8px 14px;flex:1;">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--purple);">Borrow 1M USDC</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:10px;">from Aave / dYdX — no collateral needed</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:9px;color:#000;flex-shrink:0;">2</div>
+            <div style="background:#0d0d1a;border:1px solid rgba(255,45,120,0.4);border-radius:6px;padding:8px 14px;flex:1;">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);">Manipulate Spot Price Oracle</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:10px;">dump or buy huge amounts → oracle reads wrong price</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:9px;color:#000;flex-shrink:0;">3</div>
+            <div style="background:#0d0d1a;border:1px solid rgba(255,107,53,0.4);border-radius:6px;padding:8px 14px;flex:1;">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--orange);">Exploit Mispriced Protocol</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:10px;">borrow under-collateralised / drain liquidity pool</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:9px;color:#000;flex-shrink:0;">4</div>
+            <div style="background:#0d0d1a;border:1px solid rgba(0,245,255,0.4);border-radius:6px;padding:8px 14px;flex:1;">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);">Repay Flash Loan + Fee</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:10px;">must happen in same tx or everything reverts</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:9px;color:#000;flex-shrink:0;">5</div>
+            <div style="background:rgba(0,255,136,0.1);border:2px solid var(--green);border-radius:6px;padding:8px 14px;flex:1;">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);">🏁 Keep Profit — Tx Confirmed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:4px;">
+      <div class="card green">
+        <h3 style="color:var(--green);">Common CTF Targets</h3>
+        <ul>
+          <li>Spot-price oracles (Uniswap V2 pair)</li>
+          <li>Single-block governance votes</li>
+          <li>Re-entrancy amplified by flash loan capital</li>
+          <li>Liquidity pool imbalance exploits</li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <h3 style="color:var(--orange);">CTF Solve Tips</h3>
+        <ul>
+          <li>Find: how does the contract get a price? (spot? TWAP?)</li>
+          <li>Spot price = manipulable → flash loan attack likely</li>
+          <li>Use Foundry fork: anvil --fork-url $RPC</li>
+          <li>forge test -vvvv to debug attack contract</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 17: TOOLS ── -->
+<div class="slide" id="s17">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--green);background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);">TOOLS</div>
+    <div class="slide-title neon-green" style="font-size:clamp(18px,3vw,36px);">Essential CTF Tools</div>
+    <div class="divider"></div>
+    <div class="table-scroll">
+    <table class="ctf-table">
+      <thead>
+        <tr>
+          <th>TOOL</th>
+          <th>CATEGORY</th>
+          <th>USE CASE</th>
+          <th>COMMAND</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Burp Suite</td><td><span class="badge badge-cyan">Web</span></td><td>HTTP proxy, repeater, intruder, scanner</td><td>burpsuite (GUI)</td></tr>
+        <tr><td>sqlmap</td><td><span class="badge badge-cyan">Web</span></td><td>Automated SQL injection</td><td>sqlmap -u "URL?id=1" --dbs</td></tr>
+        <tr><td>ffuf</td><td><span class="badge badge-cyan">Web</span></td><td>Directory &amp; parameter fuzzing</td><td>ffuf -u URL/FUZZ -w list.txt</td></tr>
+        <tr><td>gobuster</td><td><span class="badge badge-cyan">Web</span></td><td>Directory busting</td><td>gobuster dir -u URL -w list</td></tr>
+        <tr><td>jwt_tool</td><td><span class="badge badge-cyan">Web</span></td><td>JWT attack toolkit</td><td>python3 jwt_tool.py TOKEN -C</td></tr>
+        <tr><td>Foundry (cast)</td><td><span class="badge badge-purple">Chain</span></td><td>Interact with contracts, read storage</td><td>cast call / cast send / cast storage</td></tr>
+        <tr><td>Foundry (forge)</td><td><span class="badge badge-purple">Chain</span></td><td>Compile &amp; deploy attack contracts</td><td>forge script / forge test</td></tr>
+        <tr><td>Remix IDE</td><td><span class="badge badge-purple">Chain</span></td><td>Browser-based Solidity IDE + deploy</td><td>remix.ethereum.org</td></tr>
+        <tr><td>slither</td><td><span class="badge badge-purple">Chain</span></td><td>Static analysis for Solidity vulns</td><td>slither contract.sol</td></tr>
+        <tr><td>Etherscan</td><td><span class="badge badge-purple">Chain</span></td><td>Read deployed contract code/storage</td><td>etherscan.io</td></tr>
+        <tr><td>pwntools</td><td><span class="badge badge-green">General</span></td><td>CTF exploit framework (Python)</td><td>from pwn import *</td></tr>
+        <tr><td>CyberChef</td><td><span class="badge badge-green">General</span></td><td>Encode/decode/crypto/format conversion</td><td>gchq.github.io/CyberChef</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- ── SLIDE 20: PRACTICE PLATFORMS ── -->
+<div class="slide" id="s20">
+  <div class="scroll-content">
+    <div class="section-tag" style="color:var(--green);background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);">PRACTICE</div>
+    <div class="slide-title neon-green" style="font-size:clamp(18px,3vw,36px);">Where to Practice</div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card cyan">
+          <h3 style="color:var(--cyan);">🌐 Web CTF</h3>
+          <p><span class="badge badge-cyan">HackTheBox</span><span class="badge badge-cyan">PicoCTF</span><span class="badge badge-cyan">TryHackMe</span></p>
+          <p style="margin-top:8px;"><span class="badge badge-green">DVWA</span><span class="badge badge-green">WebGoat</span><span class="badge badge-green">PortSwigger Academy</span></p>
+          <p style="margin-top:10px;font-size:13px;">PortSwigger (Web Security Academy) is the gold standard — free interactive labs for every web vuln type.</p>
+        </div>
+        <div class="card green">
+          <h3 style="color:var(--green);">🏆 CTF Competitions</h3>
+          <p><span class="badge badge-green">CTFtime.org</span> — Calendar of all CTF events</p>
+          <p style="margin-top:8px;"><span class="badge badge-cyan">DEFCON CTF</span><span class="badge badge-cyan">Google CTF</span><span class="badge badge-cyan">CSAW</span></p>
+          <p style="margin-top:10px;font-size:13px;">Start with jeopardy-style CTFs (Web + Blockchain). Read writeups after each challenge — even solved ones.</p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card purple">
+          <h3 style="color:var(--purple);">⛓️ Blockchain CTF</h3>
+          <p><span class="badge badge-purple">Ethernaut (OpenZeppelin)</span></p>
+          <p style="margin-top:6px;"><span class="badge badge-purple">Damn Vulnerable DeFi</span></p>
+          <p style="margin-top:6px;"><span class="badge badge-purple">Capture the Ether</span></p>
+          <p style="margin-top:6px;"><span class="badge badge-orange">Mr Steal Yo Crypto</span></p>
+          <p style="margin-top:10px;font-size:13px;">Ethernaut is the essential starting point — 33 levels covering every major Solidity vulnerability.</p>
+        </div>
+        <div class="card orange">
+          <h3 style="color:var(--orange);">📚 Learning Resources</h3>
+          <p><span class="badge badge-orange">Solidity by Example</span></p>
+          <p style="margin-top:6px;"><span class="badge badge-orange">OWASP Top 10</span></p>
+          <p style="margin-top:6px;"><span class="badge badge-orange">SmartContract.security</span></p>
+          <p style="margin-top:6px;"><span class="badge badge-yellow">Cyfrin Updraft (free)</span></p>
+          <p style="margin-top:10px;font-size:13px;">Read past CTF writeups on ctftime.org and medium/@blocksecteam.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ── SLIDE 22: THANK YOU ── -->
+<div class="slide" id="s22">
+  <div class="scroll-content">
+
+
+
+    <div class="slide-title" style="font-size:clamp(30px,5vw,64px);letter-spacing:8px;">
+      <span class="neon-cyan">THANK</span>
+      <span class="neon-purple" style="display:block;margin-top:4px;">YOU</span>
+    </div>
+
+ 
+
+  </div>
+</div>
+
+<style>
+@keyframes ringDraw {
+  to { stroke-dashoffset: 0; }
+}
+</style>
+
+</div><!-- end #slides -->
+
+<!-- ── NAV ── -->
+<div id="nav">
+  <button id="btn-prev" onclick="changeSlide(-1)" disabled>◀ PREV</button>
+  <span id="slide-counter">1 / 21</span>
+  <button id="btn-next" onclick="changeSlide(1)">NEXT ▶</button>
+</div>
+
+<!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+<script>
+  /* ── Matrix Rain ── */
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const cols = Math.floor(canvas.width / 16);
+  const drops = Array(cols).fill(1);
+  const chars = '01アイウエオ∅⊕→⛓ETH0x';
+
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00f5ff';
+    ctx.font = '13px Share Tech Mono, monospace';
+    drops.forEach((y, i) => {
+      const ch = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(ch, i * 16, y * 16);
+      if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }
+
+  setInterval(drawMatrix, 50);
+
+  window.addEventListener('resize', () => {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+
+  /* ── Slide Logic ── */
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let current  = 0;
+
+  function updateUI() {
+    document.getElementById('slide-counter').textContent = `${current+1} / ${total}`;
+    document.getElementById('btn-prev').disabled = (current === 0);
+    document.getElementById('btn-next').disabled = (current === total-1);
+    const pct = ((current + 1) / total * 100).toFixed(1);
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  function changeSlide(dir) {
+    const next = current + dir;
+    if (next < 0 || next >= total) return;
+    slides[current].classList.remove('active');
+    current = next;
+    slides[current].classList.add('active');
+    updateUI();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') changeSlide(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    changeSlide(-1);
+  });
+
+  /* Touch swipe */
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) changeSlide(dx < 0 ? 1 : -1);
+  });
+
+  updateUI();
+</script>
+</body>
+</html>

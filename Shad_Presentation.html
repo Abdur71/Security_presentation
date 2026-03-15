@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USB PCAP CTF Solver</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #030c12;
+  --surface: #071520;
+  --surface2: #0a1e2e;
+  --green: #00ff88;
+  --cyan: #00e5ff;
+  --orange: #ff6d00;
+  --red: #ff1744;
+  --yellow: #ffe57a;
+  --text: #c0dff0;
+  --muted: #3d6a88;
+  --border: #0c2d48;
+  --mono: 'Share Tech Mono', monospace;
+  --display: 'Orbitron', sans-serif;
+  --body: 'Exo 2', sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.055) 2px,rgba(0,0,0,0.055) 4px)}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(1rem,4vw,3rem);height:54px;background:rgba(3,12,18,0.88);border-bottom:1px solid var(--border);backdrop-filter:blur(18px);transition:box-shadow .3s}
+nav.scrolled{box-shadow:0 4px 30px rgba(0,229,255,0.06)}
+.nav-logo{font-family:var(--display);font-size:.8rem;font-weight:700;color:var(--cyan);letter-spacing:.12em;white-space:nowrap;text-decoration:none}
+.nav-logo span{color:var(--green)}
+.nav-links{display:flex;gap:0;align-items:center;list-style:none}
+.nav-links li a{display:block;padding:.35rem .65rem;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s;white-space:nowrap}
+.nav-links li a:hover,.nav-links li a.active{color:var(--cyan)}
+.nav-links li a.active{color:var(--green)}
+.nav-cta{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;padding:.28rem .85rem;border-radius:3px;cursor:pointer;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);text-decoration:none;white-space:nowrap;transition:all .2s}
+.nav-cta:hover{background:var(--green);color:var(--bg)}
+.ham{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+.ham span{display:block;width:22px;height:2px;background:var(--muted);transition:all .3s;border-radius:2px}
+.ham.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.ham.open span:nth-child(2){opacity:0}
+.ham.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.mobile-menu{display:none;position:fixed;top:54px;left:0;right:0;z-index:890;background:rgba(3,12,18,.97);border-bottom:1px solid var(--border);padding:1rem 1.5rem;flex-direction:column;gap:.1rem;backdrop-filter:blur(18px)}
+.mobile-menu.open{display:flex}
+.mobile-menu a{color:var(--muted);text-decoration:none;font-size:.75rem;letter-spacing:.1em;padding:.5rem 0;border-bottom:1px solid rgba(12,45,72,.4);transition:color .2s}
+.mobile-menu a:hover{color:var(--cyan)}
+#progress{position:fixed;top:54px;left:0;height:2px;z-index:901;background:linear-gradient(90deg,var(--green),var(--cyan));width:0%;transition:width .12s linear}
+
+/* ── LAYOUT ── */
+section{position:relative}
+.container{max-width:1100px;margin:0 auto;padding:0 clamp(1.2rem,5vw,4rem)}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .65s ease,transform .65s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal.d1{transition-delay:.1s}.reveal.d2{transition-delay:.2s}.reveal.d3{transition-delay:.3s}.reveal.d4{transition-delay:.4s}
+
+/* ── SHARED COMPONENTS ── */
+.sec-label{display:inline-block;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--green);background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.22);border-radius:2px;padding:.2rem .65rem;margin-bottom:.85rem}
+.sec-title{font-family:var(--display);font-weight:700;font-size:clamp(1.5rem,3.5vw,2.4rem);color:var(--cyan);letter-spacing:.02em;text-shadow:0 0 30px rgba(0,229,255,.15);margin-bottom:.6rem;line-height:1.2}
+.sec-sub{font-family:var(--body);font-size:clamp(.82rem,1.5vw,.95rem);color:var(--muted);line-height:1.75;max-width:620px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.4rem;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan)}
+.card.g::before{background:var(--green)}.card.o::before{background:var(--orange)}.card.r::before{background:var(--red)}
+.card h3{font-family:var(--display);font-size:.8rem;color:var(--cyan);margin-bottom:.8rem;letter-spacing:.08em}
+.card.g h3{color:var(--green)}
+.card p,.card li{font-family:var(--body);font-size:.83rem;color:var(--text);line-height:1.75}
+.card ul{padding-left:1.1rem}.card li{margin-bottom:.25rem}.card li b{color:var(--cyan)}
+.diagram-box{background:#020a10;border:1px solid var(--border);border-radius:8px;padding:1.3rem;font-family:var(--mono);font-size:clamp(.65rem,1.5vw,.74rem);color:var(--green);line-height:1.9;overflow-x:auto}
+.diagram-box .dm{color:var(--muted);font-size:.58rem;letter-spacing:.1em;margin-bottom:.5rem}
+.diagram-box pre{white-space:pre-wrap;word-break:break-word}
+.cli-block{background:#020a10;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.cli-header{display:flex;align-items:center;gap:.45rem;padding:.55rem 1rem;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+.cli-dot{width:10px;height:10px;border-radius:50%}
+.cli-dot.r{background:#ff5f56}.cli-dot.y{background:#ffbd2e}.cli-dot.g2{background:#27c93f}
+.cli-title{font-size:.57rem;color:var(--muted);letter-spacing:.15em;margin-left:.4rem}
+.cli-body{padding:1rem 1.2rem}
+.cli-body code{display:block;font-family:var(--mono);font-size:clamp(.68rem,1.8vw,.82rem);line-height:2.0;white-space:pre-wrap;word-break:break-all}
+.cp{color:var(--green)}.cc{color:var(--cyan)}.cf{color:var(--orange)}.cm{color:var(--muted)}.co{color:var(--text)}.cy{color:var(--yellow)}
+
+/* ── HERO ── */
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:80px 1.5rem 70px}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:65px 65px}
+.hero-glow{position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(0,229,255,.055) 0%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.hero-content{position:relative;z-index:1;max-width:820px}
+.hero-pre{font-size:.63rem;letter-spacing:.3em;color:var(--green);margin-bottom:1.4rem;text-transform:uppercase}
+.hero-title{font-family:var(--display);font-weight:900;font-size:clamp(2.4rem,7vw,5.5rem);color:var(--cyan);line-height:1.0;letter-spacing:-.01em;text-shadow:0 0 60px rgba(0,229,255,.35);margin-bottom:.3rem}
+.hero-title span{color:var(--green);display:block}
+.hero-sub{font-family:var(--body);font-size:clamp(.88rem,2vw,1.08rem);color:var(--muted);margin:1.2rem auto 2rem;max-width:560px;line-height:1.75}
+.hero-pills{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem}
+.pill{padding:.33rem .95rem;border-radius:3px;font-size:.7rem;font-family:var(--mono);letter-spacing:.08em}
+.pill-g{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.28);color:var(--green)}
+.pill-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.28);color:var(--cyan)}
+.pill-o{background:rgba(255,109,0,.1);border:1px solid rgba(255,109,0,.28);color:var(--orange)}
+.pill-r{background:rgba(255,23,68,.08);border:1px solid rgba(255,23,68,.2);color:var(--red)}
+.hero-cmd{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem 1.5rem;font-size:clamp(.72rem,2vw,.88rem);color:var(--green);font-family:var(--mono)}
+.hero-corners span{position:absolute;font-size:.53rem;color:rgba(0,229,255,.15);letter-spacing:.1em}
+.hero-corners .tl{top:80px;left:1.5rem}.hero-corners .tr{top:80px;right:1.5rem}
+.hero-corners .bl{bottom:70px;left:1.5rem}.hero-corners .br{bottom:70px;right:1.5rem}
+@media(max-width:600px){.hero-corners span{display:none}}
+.scroll-hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:5px;font-size:.52rem;color:var(--muted);letter-spacing:.15em;animation:bob 2.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
+.scroll-hint svg{width:15px;opacity:.35}
+
+/* ── PCAP ── */
+#pcap{padding:100px 0}
+.pcap-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2.5rem}
+@media(max-width:700px){.pcap-grid{grid-template-columns:1fr}}
+
+/* ── HID ── */
+#hid{padding:100px 0;background:linear-gradient(180deg,var(--bg) 0%,var(--surface) 50%,var(--bg) 100%)}
+.hid-cols{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2.5rem}
+@media(max-width:700px){.hid-cols{grid-template-columns:1fr}}
+.hid-label{font-size:.58rem;color:var(--green);letter-spacing:.15em;margin-bottom:.6rem}
+.byte-strip{display:flex;gap:0;margin-bottom:.8rem;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.bc{flex:1;text-align:center;padding:.7rem .3rem;border-right:1px solid var(--border);background:var(--surface)}
+.bc:last-child{border-right:none}
+.bc.hi{background:rgba(0,255,136,.06)}.bc.hi2{background:rgba(0,229,255,.06)}
+.bc .bl{font-size:.52rem;color:var(--muted);margin-bottom:.25rem}
+.bc .bv{font-size:.82rem;color:var(--cyan);font-weight:bold}
+.bc.hi .bv{color:var(--green)}
+.bc .bd{font-size:.56rem;color:var(--muted);margin-top:.2rem;font-family:var(--body)}
+.flag-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.8rem}
+.fc{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.38rem .65rem}
+.fc .fh{color:var(--orange);font-size:.72rem;min-width:34px}
+.fc .fd{color:var(--text);font-size:.68rem;font-family:var(--body)}
+
+/* ── TYPES ── */
+#types{padding:100px 0}
+.types-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.4rem;margin-top:2.5rem}
+@media(max-width:640px){.types-grid{grid-template-columns:1fr}}
+.type-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.6rem;position:relative;overflow:hidden;transition:transform .25s,border-color .25s}
+.type-card:hover{transform:translateY(-4px)}
+.tc-icon{font-size:2.2rem;margin-bottom:1rem;display:block}
+.type-card h3{font-family:var(--display);font-size:.9rem;margin-bottom:.6rem;letter-spacing:.06em}
+.type-card p{font-family:var(--body);font-size:.79rem;color:var(--muted);line-height:1.65}
+.type-card .out-tag{display:inline-block;margin-top:1rem;font-size:.63rem;padding:.2rem .62rem;border-radius:3px;letter-spacing:.05em}
+.glow-bg{position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;opacity:.06;pointer-events:none}
+.tc-kb{border-color:rgba(0,255,136,.18)}.tc-kb:hover{border-color:rgba(0,255,136,.4)}.tc-kb h3{color:var(--green)}.tc-kb .out-tag{background:rgba(0,255,136,.09);border:1px solid rgba(0,255,136,.22);color:var(--green)}.tc-kb .glow-bg{background:var(--green)}
+.tc-ms{border-color:rgba(0,229,255,.18)}.tc-ms:hover{border-color:rgba(0,229,255,.4)}.tc-ms h3{color:var(--cyan)}.tc-ms .out-tag{background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.22);color:var(--cyan)}.tc-ms .glow-bg{background:var(--cyan)}
+.tc-pr{border-color:rgba(255,109,0,.18)}.tc-pr:hover{border-color:rgba(255,109,0,.4)}.tc-pr h3{color:var(--orange)}.tc-pr .out-tag{background:rgba(255,109,0,.09);border:1px solid rgba(255,109,0,.22);color:var(--orange)}.tc-pr .glow-bg{background:var(--orange)}
+.tc-st{border-color:rgba(255,23,68,.14)}.tc-st:hover{border-color:rgba(255,23,68,.35)}.tc-st h3{color:var(--red)}.tc-st .out-tag{background:rgba(255,23,68,.07);border:1px solid rgba(255,23,68,.18);color:var(--red)}.tc-st .glow-bg{background:var(--red)}
+
+/* ── USAGE ── */
+#usage{padding:100px 0}
+.cli-wrap{margin-top:2.5rem;display:flex;flex-direction:column;gap:1.2rem}
+
+/* ── ARCH ── */
+#arch{padding:100px 0;background:linear-gradient(180deg,var(--bg),var(--surface) 50%,var(--bg))}
+.arch-flow{display:flex;align-items:center;flex-wrap:wrap;gap:0;justify-content:center;margin:2.5rem 0}
+.af-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.65rem 1rem;text-align:center;min-width:95px;transition:border-color .2s}
+.af-box:hover{border-color:var(--cyan)}
+.af-icon{font-size:1.25rem;margin-bottom:.28rem}
+.af-name{font-size:.62rem;color:var(--cyan);letter-spacing:.06em}
+.af-desc{font-size:.52rem;color:var(--muted);margin-top:.12rem;font-family:var(--body)}
+.af-arrow{color:var(--muted);font-size:1rem;padding:0 .22rem;flex-shrink:0}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:.9rem}
+.mod{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1rem 1.1rem;transition:border-color .2s,transform .2s}
+.mod:hover{border-color:rgba(0,229,255,.3);transform:translateY(-2px)}
+.mod-letter{font-family:var(--display);font-size:.6rem;color:var(--orange);margin-bottom:.3rem;letter-spacing:.12em}
+.mod-name{font-size:.76rem;color:var(--cyan);margin-bottom:.25rem}
+.mod-desc{font-size:.66rem;color:var(--muted);font-family:var(--body);line-height:1.5}
+
+/* ── KEYBOARD ── */
+#keyboard{padding:100px 0}
+.kb-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2.5rem}
+@media(max-width:720px){.kb-grid{grid-template-columns:1fr}}
+.keymap-vis{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1.3rem;margin-bottom:1rem}
+.km-row{display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap}
+.key{width:30px;height:30px;border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.58rem;color:var(--muted);background:var(--surface);user-select:none;flex-shrink:0}
+.key.ka{border-color:rgba(0,229,255,.35);color:var(--cyan);background:rgba(0,229,255,.06)}
+.key.ks{border-color:rgba(255,109,0,.35);color:var(--orange);background:rgba(255,109,0,.06)}
+.key.w48{width:48px}.key.w60{width:60px}
+.km-legend{display:flex;gap:1rem;margin-top:.6rem;font-size:.56rem;color:var(--muted);font-family:var(--body)}
+.km-legend span{display:flex;align-items:center;gap:4px}
+.km-swatch{width:10px;height:10px;border-radius:2px}
+.step-list{list-style:none}
+.sl-item{display:flex;gap:.9rem;align-items:flex-start;padding:.65rem 0;border-bottom:1px solid rgba(12,45,72,.5)}
+.sl-item:last-child{border-bottom:none}
+.sl-num{width:22px;height:22px;border-radius:50%;flex-shrink:0;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:var(--cyan);font-size:.6rem;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.sl-text{font-family:var(--body);font-size:.79rem;color:var(--text);line-height:1.6}
+.sl-text b{color:var(--cyan)}
+
+/* ── MOUSE ── */
+#mouse{padding:100px 0;background:linear-gradient(180deg,var(--bg),var(--surface) 50%,var(--bg))}
+.mouse-cols{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2.5rem}
+@media(max-width:720px){.mouse-cols{grid-template-columns:1fr}}
+.mouse-demo{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.demo-bar{display:flex;align-items:center;gap:.45rem;padding:.52rem 1rem;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+.demo-bar span{font-size:.53rem;color:var(--muted);margin-left:.5rem}
+.demo-bar .clr{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-size:.56rem;padding:2px 8px;border-radius:3px;cursor:pointer;font-family:var(--mono);transition:all .2s}
+.demo-bar .clr:hover{border-color:var(--red);color:var(--red)}
+#mouseCanvas{display:block;background:white;width:100%;height:200px;cursor:crosshair;touch-action:none}
+.output-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-top:1rem}
+.oc{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.8rem .6rem;text-align:center}
+.oc-icon{font-size:1.4rem;margin-bottom:.3rem}
+.oc-name{font-size:.63rem;color:var(--cyan);margin-bottom:.2rem}
+.oc-file{font-size:.56rem;color:var(--muted);font-family:var(--mono)}
+
+/* ── CARVING ── */
+#carving{padding:100px 0}
+.table-wrap{overflow-x:auto;margin-top:2.5rem;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:clamp(.62rem,1.5vw,.75rem)}
+thead th{background:var(--surface2);color:var(--cyan);padding:.65rem 1rem;text-align:left;border-bottom:1px solid var(--border);font-family:var(--display);font-size:.6rem;letter-spacing:.08em;white-space:nowrap}
+tbody td{padding:.52rem 1rem;border-bottom:1px solid rgba(12,45,72,.5);font-family:var(--mono);color:var(--text);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(0,229,255,.02)}
+.th{color:var(--orange)}.te{color:var(--green)}
+.carve-note{margin-top:1rem;font-family:var(--body);font-size:.77rem;color:var(--muted);padding:.8rem 1.2rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;border-left:3px solid var(--green)}
+.carve-note code{color:var(--green);font-family:var(--mono)}
+
+/* ── AUTO DETECT ── */
+#autodetect{padding:100px 0;background:linear-gradient(180deg,var(--bg),var(--surface) 50%,var(--bg))}
+.detect-cols{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2.5rem}
+@media(max-width:720px){.detect-cols{grid-template-columns:1fr}}
+.score-bar{margin-bottom:1rem}
+.sb-head{display:flex;justify-content:space-between;margin-bottom:.4rem}
+.sb-name{font-size:.74rem;color:var(--text)}
+.sb-val{font-size:.63rem;color:var(--muted);font-family:var(--body)}
+.bar-track{height:9px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;width:0;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.bf-g{background:linear-gradient(90deg,var(--green),#00cc6a)}
+.bf-c{background:linear-gradient(90deg,var(--cyan),#0099bb)}
+.bf-o{background:linear-gradient(90deg,var(--orange),#cc5500)}
+.criteria-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.crit-head{padding:.6rem 1rem;background:var(--surface2);border-bottom:1px solid var(--border)}
+.crit-head span{font-size:.56rem;color:var(--green);letter-spacing:.14em}
+.crit-row{display:flex;align-items:center;padding:.52rem 1rem;border-bottom:1px solid rgba(12,45,72,.5);gap:.8rem;flex-wrap:wrap}
+.crit-row:last-child{border-bottom:none}
+.cr-type{color:var(--cyan);font-size:.68rem;min-width:75px}
+.cr-rule{color:var(--muted);font-size:.66rem;font-family:var(--body);flex:1}
+.cr-sz{color:var(--orange);font-size:.62rem;white-space:nowrap}
+
+/* ── OUTPUTS ── */
+#outputs{padding:100px 0}
+.out-list{display:flex;flex-direction:column;gap:.6rem;margin-top:2.5rem}
+.out-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:.82rem 1.2rem;transition:border-color .2s}
+.out-row:hover{border-color:rgba(0,229,255,.28)}
+.or-icon{font-size:1.2rem;flex-shrink:0}
+.or-file{color:var(--green);font-size:.74rem;min-width:220px;font-family:var(--mono)}
+.or-mode{color:var(--orange);font-size:.6rem;min-width:100px;font-family:var(--body)}
+.or-desc{color:var(--muted);font-size:.72rem;font-family:var(--body)}
+@media(max-width:520px){.or-file{min-width:unset;width:100%}.or-mode{min-width:unset}}
+
+/* ── TIPS ── */
+#tips{padding:100px 0}
+.tips-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem;margin-top:2.5rem}
+@media(max-width:640px){.tips-grid{grid-template-columns:1fr}}
+.tip-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.3rem}
+.tip-card h4{font-family:var(--display);font-size:.7rem;letter-spacing:.1em;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;padding-bottom:.6rem}
+.tip-card.tg h4{color:var(--green);border-bottom:1px solid rgba(0,255,136,.12)}
+.tip-card.tc h4{color:var(--cyan);border-bottom:1px solid rgba(0,229,255,.12)}
+.tip-card.to h4{color:var(--orange);border-bottom:1px solid rgba(255,109,0,.12)}
+.tip-card.tr h4{color:var(--red);border-bottom:1px solid rgba(255,23,68,.1)}
+.tip-item{font-family:var(--body);font-size:.74rem;color:var(--muted);padding:.28rem 0 .28rem .85rem;border-left:2px solid var(--border);margin-bottom:.28rem;line-height:1.55}
+.tip-item b{color:var(--text)}.tip-item code{color:var(--green);font-family:var(--mono);font-size:.7rem}
+
+/* ── FOOTER ── */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:80px clamp(1.2rem,5vw,4rem) 50px;text-align:center}
+.footer-logo{font-family:var(--display);font-size:1.5rem;font-weight:900;color:var(--green);text-shadow:0 0 30px rgba(0,255,136,.3);margin-bottom:.5rem}
+.footer-tagline{color:var(--muted);font-family:var(--body);font-size:.8rem;margin-bottom:1.8rem}
+.footer-cmd{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.7rem 1.4rem;font-size:clamp(.7rem,2vw,.85rem);color:var(--green);font-family:var(--mono);margin-bottom:2rem}
+.footer-pills{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+.fp{padding:.28rem .88rem;border-radius:3px;font-size:.63rem;font-family:var(--mono);letter-spacing:.06em;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);color:var(--muted)}
+.footer-copy{margin-top:2rem;font-size:.56rem;color:rgba(61,106,136,.35);letter-spacing:.1em}
+
+@media(max-width:860px){.nav-links{display:none}.ham{display:flex}}
+@media(max-width:480px){.nav-cta{display:none}}
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <a class="nav-logo" href="#hero">USB<span>PCAP</span> CTF</a>
+  <ul class="nav-links">
+    <li><a href="#pcap">PCAP</a></li>
+    <li><a href="#hid">HID</a></li>
+    <li><a href="#types">Types</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#arch">Arch</a></li>
+    <li><a href="#keyboard">Keyboard</a></li>
+    <li><a href="#mouse">Mouse</a></li>
+    <li><a href="#carving">Carving</a></li>
+    <li><a href="#tips">Tips</a></li>
+  </ul>
+  <a href="#usage" class="nav-cta">GET STARTED</a>
+  <div class="ham" id="ham" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#pcap" onclick="closeMenu()">What is PCAP?</a>
+  <a href="#hid" onclick="closeMenu()">HID Protocol</a>
+  <a href="#types" onclick="closeMenu()">Challenge Types</a>
+  <a href="#usage" onclick="closeMenu()">Usage & CLI</a>
+  <a href="#arch" onclick="closeMenu()">Architecture</a>
+  <a href="#keyboard" onclick="closeMenu()">Keyboard Decoder</a>
+  <a href="#mouse" onclick="closeMenu()">Mouse Tracker</a>
+  <a href="#carving" onclick="closeMenu()">File Carving</a>
+  <a href="#autodetect" onclick="closeMenu()">Auto Detection</a>
+  <a href="#outputs" onclick="closeMenu()">Output Files</a>
+  <a href="#tips" onclick="closeMenu()">Tips & Tricks</a>
+</div>
+
+<div id="progress"></div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-corners">
+    <span class="tl">SYS://CTF_TOOLS/USB_PCAP</span>
+    <span class="tr">PYTHON 3.6+ · SCAPY · PILLOW</span>
+    <span class="bl">STATUS: OPERATIONAL</span>
+    <span class="br">v1.0 · ALL MODES READY</span>
+  </div>
+  <div class="hero-content">
+    <div class="hero-pre reveal">🔌 capture · analyze · decode · extract</div>
+    <h1 class="hero-title reveal d1">USB PCAP<span>CTF Solver</span></h1>
+    <p class="hero-sub reveal d2">A complete all-in-one Python toolkit for solving USB packet capture challenges in CTF competitions. Supports keyboard, mouse, printer, and mass storage devices.</p>
+    <div class="hero-pills reveal d3">
+      <span class="pill pill-g">⌨ Keyboard</span>
+      <span class="pill pill-c">🖱 Mouse</span>
+      <span class="pill pill-o">🖨 Printer</span>
+      <span class="pill pill-r">💾 Mass Storage</span>
+    </div>
+    <div class="hero-cmd reveal d4"><span style="color:var(--muted)">$ </span>python usb_pcap_solver.py challenge.pcap <span style="color:var(--orange)">--all</span></div>
+  </div>
+  <div class="scroll-hint">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    SCROLL
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PCAP -->
+<section id="pcap">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Fundamentals</span></div>
+    <h2 class="sec-title reveal d1">What is a PCAP File?</h2>
+    <p class="sec-sub reveal d2">A binary recording of raw data packets flowing through a USB bus. In CTFs, flags are hidden inside captured traffic waiting to be decoded.</p>
+    <div class="pcap-grid">
+      <div style="display:flex;flex-direction:column;gap:1.2rem">
+        <div class="card reveal d1">
+          <h3>PCAP = Packet Capture</h3>
+          <p>Records every byte transferred between host and device. Each packet contains raw HID report data — keystrokes, mouse deltas, or bulk transfer payloads.</p>
+        </div>
+        <div class="card g reveal d2">
+          <h3>Tools to Analyze PCAPs</h3>
+          <ul>
+            <li><b>Wireshark</b> — graphical viewer with USB dissectors</li>
+            <li><b>tshark</b> — command-line Wireshark for scripting</li>
+            <li><b>scapy</b> — Python library used in this tool</li>
+            <li><b>tcpdump</b> — low-level capture and filtering</li>
+          </ul>
+        </div>
+      </div>
+      <div class="diagram-box reveal d3" style="height:100%">
+        <div class="dm">// USB DATA FLOW</div>
+        <pre>
+Computer
+  │
+  ├──[ USB Bus ]───────────────────►
+  │        ↑                       │
+  │   challenge.pcap           Device
+  │   (captured here)     (KB/Mouse/Drive)
+  │
+  └──[ scapy.rdpcap(file) ]
+          │
+          ▼
+    [ Raw Packets ]
+    strip 64-byte Linux USB header
+          │
+          ├─► keyboard decoder ──► text
+          ├─► mouse tracker   ──► 3x PNG
+          ├─► printer extract ──► PCL/PS/PDF
+          └─► file carver     ──► PNG/ZIP/ELF</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HID -->
+<section id="hid">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Protocol Deep Dive</span></div>
+    <h2 class="sec-title reveal d1">USB HID Packet Structure</h2>
+    <p class="sec-sub reveal d2">HID = Human Interface Device. Every keypress or mouse movement is sent as a tiny binary report packet.</p>
+    <div class="hid-cols">
+      <div>
+        <div class="hid-label reveal">// KEYBOARD HID REPORT · 8 BYTES</div>
+        <div class="byte-strip reveal d1">
+          <div class="bc hi"><div class="bl">Byte 0</div><div class="bv">MOD</div><div class="bd">Modifier</div></div>
+          <div class="bc"><div class="bl">Byte 1</div><div class="bv">0x00</div><div class="bd">Reserved</div></div>
+          <div class="bc hi"><div class="bl">Byte 2</div><div class="bv">KEY1</div><div class="bd">Keycode</div></div>
+          <div class="bc"><div class="bl">Byte 3</div><div class="bv">KEY2</div><div class="bd">Extra</div></div>
+          <div class="bc"><div class="bl">4–7</div><div class="bv">···</div><div class="bd">Unused</div></div>
+        </div>
+        <div class="flag-chips reveal d2">
+          <div class="fc"><span class="fh">0x02</span><span class="fd">Left Shift</span></div>
+          <div class="fc"><span class="fh">0x20</span><span class="fd">Right Shift</span></div>
+          <div class="fc"><span class="fh">0x01</span><span class="fd">Left Ctrl</span></div>
+          <div class="fc"><span class="fh">0x04</span><span class="fd">Left Alt</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="hid-label reveal">// MOUSE HID REPORT · 4 BYTES</div>
+        <div class="byte-strip reveal d1">
+          <div class="bc hi2"><div class="bl">Byte 0</div><div class="bv">BTN</div><div class="bd">Buttons</div></div>
+          <div class="bc"><div class="bl">Byte 1</div><div class="bv">dX</div><div class="bd">X delta ±</div></div>
+          <div class="bc"><div class="bl">Byte 2</div><div class="bv">dY</div><div class="bd">Y delta ±</div></div>
+          <div class="bc"><div class="bl">Byte 3</div><div class="bv">SCR</div><div class="bd">Scroll</div></div>
+        </div>
+        <div class="flag-chips reveal d2">
+          <div class="fc"><span class="fh">0x01</span><span class="fd">Left click</span></div>
+          <div class="fc"><span class="fh">0x02</span><span class="fd">Right click</span></div>
+          <div class="fc"><span class="fh">0x04</span><span class="fd">Middle click</span></div>
+          <div class="fc"><span class="fh">±127</span><span class="fd">Signed X/Y</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TYPES -->
+<section id="types">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">CTF Challenges</span></div>
+    <h2 class="sec-title reveal d1">Types of USB CTF Challenges</h2>
+    <p class="sec-sub reveal d2">Four distinct categories, each requiring a different decoding approach.</p>
+    <div class="types-grid">
+      <div class="type-card tc-kb reveal d1"><div class="glow-bg"></div><span class="tc-icon">⌨️</span><h3>Keyboard</h3><p>Captures every keystroke. Decode modifier keys, Shift, CapsLock, and Backspace to reconstruct what was typed and extract the hidden flag.</p><span class="out-tag">→ Text / Flag string</span></div>
+      <div class="type-card tc-ms reveal d2"><div class="glow-bg"></div><span class="tc-icon">🖱️</span><h3>Mouse</h3><p>Track X/Y deltas to plot cursor movement. Left-click drag paths often spell out letters or a complete flag when rendered as a PNG image.</p><span class="out-tag">→ PNG image / Drawing</span></div>
+      <div class="type-card tc-pr reveal d3"><div class="glow-bg"></div><span class="tc-icon">🖨️</span><h3>Printer</h3><p>Extract bulk transfer data from print jobs. Output may be PCL, PostScript, or PDF — renderable documents containing the hidden flag.</p><span class="out-tag">→ PCL / PostScript / PDF</span></div>
+      <div class="type-card tc-st reveal d4"><div class="glow-bg"></div><span class="tc-icon">💾</span><h3>Mass Storage</h3><p>Carve known file types from raw USB bulk transfer data using magic byte signatures — no filesystem required.</p><span class="out-tag">→ PNG / ZIP / ELF / etc.</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- USAGE -->
+<section id="usage">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Setup & CLI</span></div>
+    <h2 class="sec-title reveal d1">Installation &amp; Usage</h2>
+    <p class="sec-sub reveal d2">Two pip packages and you're solving USB PCAP challenges immediately.</p>
+    <div class="cli-wrap">
+      <div class="cli-block reveal d1">
+        <div class="cli-header"><div class="cli-dot r"></div><div class="cli-dot y"></div><div class="cli-dot g2"></div><span class="cli-title">INSTALLATION</span></div>
+        <div class="cli-body"><code><span class="cp">$ </span><span class="cc">pip install</span> scapy pillow
+<span class="cp">$ </span><span class="cc">python -c</span> <span class="cy">"import scapy; import PIL; print('All good!')"</span>
+<span class="co">All good!</span></code></div>
+      </div>
+      <div class="cli-block reveal d2">
+        <div class="cli-header"><div class="cli-dot r"></div><div class="cli-dot y"></div><div class="cli-dot g2"></div><span class="cli-title">ALL DECODE MODES</span></div>
+        <div class="cli-body"><code><span class="cm"># Auto-detect and decode (default)</span>
+<span class="cp">$ </span><span class="cc">python usb_pcap_solver.py</span> challenge.pcap
+
+<span class="cm"># Force a specific decoder</span>
+<span class="cp">$ </span><span class="cc">python usb_pcap_solver.py</span> challenge.pcap <span class="cf">--mode keyboard</span>
+<span class="cp">$ </span><span class="cc">python usb_pcap_solver.py</span> challenge.pcap <span class="cf">--mode mouse</span>
+<span class="cp">$ </span><span class="cc">python usb_pcap_solver.py</span> challenge.pcap <span class="cf">--mode printer</span>
+<span class="cp">$ </span><span class="cc">python usb_pcap_solver.py</span> challenge.pcap <span class="cf">--mode storage</span>
+<span class="cp">$ </span><span class="cc">python usb_pcap_solver.py</span> challenge.pcap <span class="cf">--mode hex</span></code></div>
+      </div>
+      <div class="cli-block reveal d3">
+        <div class="cli-header"><div class="cli-dot r"></div><div class="cli-dot y"></div><div class="cli-dot g2"></div><span class="cli-title">POWER MODE — RUN EVERYTHING AT ONCE</span></div>
+        <div class="cli-body"><code><span class="cm"># Shotgun approach — run ALL decoders</span>
+<span class="cp">$ </span><span class="cc">python usb_pcap_solver.py</span> challenge.pcap <span class="cf">--all</span>
+
+<span class="co">[*] Loading PCAP: challenge.pcap
+[*] Total packets: 1247
+[*] Extracted 1247 HID packets
+[🚩] FLAG FOUND → CTF{usb_h1d_d3c0d3d}</span></code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ARCH -->
+<section id="arch">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Code Structure</span></div>
+    <h2 class="sec-title reveal d1">Tool Architecture</h2>
+    <p class="sec-sub reveal d2">Nine modular components from raw PCAP loading to flag extraction.</p>
+    <div class="arch-flow reveal">
+      <div class="af-box"><div class="af-icon">📄</div><div class="af-name">.pcap file</div><div class="af-desc">Input</div></div>
+      <div class="af-arrow">→</div>
+      <div class="af-box"><div class="af-icon">🔍</div><div class="af-name">rdpcap()</div><div class="af-desc">scapy loader</div></div>
+      <div class="af-arrow">→</div>
+      <div class="af-box"><div class="af-icon">⚙️</div><div class="af-name">extract_usb</div><div class="af-desc">strip 64B hdr</div></div>
+      <div class="af-arrow">→</div>
+      <div class="af-box"><div class="af-icon">🧠</div><div class="af-name">auto_detect</div><div class="af-desc">score & route</div></div>
+      <div class="af-arrow">→</div>
+      <div class="af-box"><div class="af-icon">🚩</div><div class="af-name">Flag!</div><div class="af-desc">Output</div></div>
+    </div>
+    <div class="modules-grid">
+      <div class="mod reveal d1"><div class="mod-letter">PART A</div><div class="mod-name">Imports</div><div class="mod-desc">scapy, Pillow, argparse — auto-installs if missing</div></div>
+      <div class="mod reveal d2"><div class="mod-letter">PART B</div><div class="mod-name">HID Keymaps</div><div class="mod-desc">Hex keycode → char lookup. Normal + Shift variants</div></div>
+      <div class="mod reveal d3"><div class="mod-letter">PART C</div><div class="mod-name">Data Extraction</div><div class="mod-desc">Strips Linux 64-byte USB memory-mapped header</div></div>
+      <div class="mod reveal d1"><div class="mod-letter">PART D</div><div class="mod-name">Keyboard Decoder</div><div class="mod-desc">Modifier, Shift, CapsLock, Backspace, Ctrl combos</div></div>
+      <div class="mod reveal d2"><div class="mod-letter">PART E</div><div class="mod-name">Mouse Tracker</div><div class="mod-desc">Signed XY delta accumulation → 3 PNG outputs</div></div>
+      <div class="mod reveal d3"><div class="mod-letter">PART F</div><div class="mod-name">Printer Extractor</div><div class="mod-desc">Magic byte detection, saves PCL / PostScript / PDF</div></div>
+      <div class="mod reveal d1"><div class="mod-letter">PART G</div><div class="mod-name">File Carver</div><div class="mod-desc">12+ magic signatures, offset-based extraction</div></div>
+      <div class="mod reveal d2"><div class="mod-letter">PART H</div><div class="mod-name">Auto Detect</div><div class="mod-desc">Packet-length scoring, picks best decoder</div></div>
+      <div class="mod reveal d3"><div class="mod-letter">PART I</div><div class="mod-name">Main / CLI</div><div class="mod-desc">argparse entry point, routes to decoder or --all</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- KEYBOARD -->
+<section id="keyboard">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Decoder · Mode 1</span></div>
+    <h2 class="sec-title reveal d1">Keyboard Decoder</h2>
+    <p class="sec-sub reveal d2">Reconstructs typed text from raw HID packets, handling all modifier keys, Backspace simulation, and Ctrl combos.</p>
+    <div class="kb-grid">
+      <div>
+        <div class="keymap-vis reveal">
+          <div style="font-size:.58rem;color:var(--green);letter-spacing:.1em;margin-bottom:.7rem">// SAMPLE KEYMAP (0x04–0x1D = a–z)</div>
+          <div class="km-row">
+            <div class="key w48">ESC</div>
+            <div class="key ka">a</div><div class="key ka">b</div><div class="key ka">c</div><div class="key ka">d</div><div class="key ka">e</div><div class="key ka">f</div>
+          </div>
+          <div class="km-row">
+            <div class="key ks w60">⇧ SHIFT</div>
+            <div class="key ks">A</div><div class="key ks">!</div><div class="key ks">@</div><div class="key ks">#</div><div class="key ks">$</div>
+          </div>
+          <div class="km-row">
+            <div class="key w48">CTRL</div><div class="key w48">CAPS</div><div class="key w48">← BS</div><div class="key">ENT</div><div class="key w48">SPC</div>
+          </div>
+          <div class="km-legend">
+            <span><div class="km-swatch" style="background:rgba(0,229,255,.4)"></div>normal key</span>
+            <span><div class="km-swatch" style="background:rgba(255,109,0,.4)"></div>shift held</span>
+          </div>
+        </div>
+        <div class="diagram-box reveal d1" style="margin-top:1rem;font-size:.71rem">
+          <div class="dm">// DECODE LOGIC</div>
+          <pre>modifier = raw[0]
+keycode  = raw[2]
+
+shift = modifier & 0x02  # L-Shift
+      | modifier & 0x20  # R-Shift
+
+if shift or caps_lock:
+  char = SHIFT_KEYMAP[keycode]
+else:
+  char = KEYMAP[keycode]
+
+if char == '[BACKSPACE]':
+  result.pop()  # undo last char</pre>
+        </div>
+      </div>
+      <div>
+        <ul class="step-list">
+          <li class="sl-item reveal d1"><div class="sl-num">1</div><div class="sl-text">Read <b>Byte 0</b> — detect Shift, Ctrl, Alt via bitmask check</div></li>
+          <li class="sl-item reveal d2"><div class="sl-num">2</div><div class="sl-text">Read <b>Byte 2</b> (keycode) — look up in KEYMAP or SHIFT_KEYMAP</div></li>
+          <li class="sl-item reveal d3"><div class="sl-num">3</div><div class="sl-text">Toggle <b>CapsLock</b> state when keycode 0x39 is seen in packet</div></li>
+          <li class="sl-item reveal d1"><div class="sl-num">4</div><div class="sl-text">Handle <b style="color:var(--red)">[BACKSPACE]</b> by popping the last character from buffer</div></li>
+          <li class="sl-item reveal d2"><div class="sl-num">5</div><div class="sl-text">Build <b>[CTRL+X]</b> labels — flag may have been pasted not typed</div></li>
+          <li class="sl-item reveal d3"><div class="sl-num">6</div><div class="sl-text">Regex scan output for <b style="color:var(--yellow)">FLAG{…}</b> patterns automatically</div></li>
+          <li class="sl-item reveal d1"><div class="sl-num">7</div><div class="sl-text">Save keystrokes + clean text to <b>keyboard_output.txt</b></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- MOUSE -->
+<section id="mouse">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Decoder · Mode 2</span></div>
+    <h2 class="sec-title reveal d1">Mouse Tracker</h2>
+    <p class="sec-sub reveal d2">Accumulates signed X/Y deltas to plot cursor movement. Click-drag paths are rendered as PNG images — flags are often drawn by the mouse.</p>
+    <div class="mouse-cols">
+      <div>
+        <div class="mouse-demo reveal">
+          <div class="demo-bar">
+            <div class="cli-dot r"></div><div class="cli-dot y"></div><div class="cli-dot g2"></div>
+            <span>Interactive — draw with left-click / touch</span>
+            <button class="clr" onclick="clearCanvas()">CLEAR</button>
+          </div>
+          <canvas id="mouseCanvas"></canvas>
+        </div>
+        <div class="output-cards">
+          <div class="oc reveal d1"><div class="oc-icon">🌫️</div><div class="oc-name">All Movement</div><div class="oc-file">mouse_all_movement.png</div></div>
+          <div class="oc reveal d2"><div class="oc-icon">🔵</div><div class="oc-name">Click Dots</div><div class="oc-file">mouse_clicks.png</div></div>
+          <div class="oc reveal d3"><div class="oc-icon">✏️</div><div class="oc-name">Click Path</div><div class="oc-file">mouse_click_path.png</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="diagram-box reveal" style="margin-bottom:1rem;font-size:.71rem">
+          <div class="dm">// TRACKING LOGIC</div>
+          <pre>x, y = 2000, 2000  # center 4000×4000
+
+for raw in data_list:
+  buttons = raw[0]
+  dx = signed_byte(raw[1])  # ±127
+  dy = signed_byte(raw[2])  # ±127
+
+  x = clamp(x + dx, 0, 4000)
+  y = clamp(y + dy, 0, 4000)
+
+  if buttons & 0x01:  # left button held
+    click_points.append((x, y))</pre>
+        </div>
+        <div class="card reveal d1" style="margin-bottom:1rem">
+          <h3>Why 3 Output Images?</h3>
+          <p>Different CTF challenges hide flags differently. Sometimes only the connected click-path reveals text. Other times, dot clusters form a pattern. Generating all three maximizes your chance of seeing the flag.</p>
+        </div>
+        <div class="card reveal d2">
+          <h3>Signed Byte Conversion</h3>
+          <p>Mouse deltas are signed — values above 127 mean negative movement (left/up). Helper: <code style="color:var(--green);font-family:var(--mono)">val - 256 if val > 127 else val</code></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CARVING -->
+<section id="carving">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Decoder · Mode 4</span></div>
+    <h2 class="sec-title reveal d1">Mass Storage &amp; File Carving</h2>
+    <p class="sec-sub reveal d2">Extracts files from raw binary data without a filesystem — by scanning for known magic byte signatures.</p>
+    <div class="table-wrap reveal">
+      <table>
+        <thead><tr><th>Magic Bytes</th><th>Format</th><th>Description</th><th>Ext</th></tr></thead>
+        <tbody>
+          <tr><td class="th">\x89 PNG</td><td>PNG Image</td><td>Most common flag carrier</td><td class="te">.png</td></tr>
+          <tr><td class="th">\xff \xd8 \xff</td><td>JPEG Image</td><td>Joint Photographic Experts Group</td><td class="te">.jpg</td></tr>
+          <tr><td class="th">PK \x03 \x04</td><td>ZIP Archive</td><td>May contain nested flags — check password</td><td class="te">.zip</td></tr>
+          <tr><td class="th">%PDF</td><td>PDF Document</td><td>Portable Document Format</td><td class="te">.pdf</td></tr>
+          <tr><td class="th">\x7f ELF</td><td>ELF Binary</td><td>Linux executable or shared library</td><td class="te">.elf</td></tr>
+          <tr><td class="th">GIF8</td><td>GIF Image</td><td>Static or animated GIF</td><td class="te">.gif</td></tr>
+          <tr><td class="th">\x1f \x8b</td><td>GZip Archive</td><td>Compressed data stream</td><td class="te">.gz</td></tr>
+          <tr><td class="th">MZ</td><td>PE Executable</td><td>Windows .exe or .dll</td><td class="te">.exe</td></tr>
+          <tr><td class="th">ID3 / \xff\xfb</td><td>MP3 Audio</td><td>Audio — steganography possible</td><td class="te">.mp3</td></tr>
+          <tr><td class="th">OggS</td><td>OGG Audio</td><td>Open source audio container</td><td class="te">.ogg</td></tr>
+          <tr><td class="th">RIFF</td><td>WAV Audio</td><td>Waveform — may encode data</td><td class="te">.wav</td></tr>
+          <tr><td class="th">BZh</td><td>BZip2 Archive</td><td>BZip2 compressed stream</td><td class="te">.bz2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="carve-note reveal">💡 After carving, run <code>strings storage_raw.bin</code> for plaintext flags, or <code>binwalk storage_raw.bin</code> for nested file detection. Password-protected ZIPs? Try the rockyou.txt wordlist with fcrackzip.</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- AUTO DETECT -->
+<section id="autodetect">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Smart Mode</span></div>
+    <h2 class="sec-title reveal d1">Auto Detection System</h2>
+    <p class="sec-sub reveal d2">Samples the first 100 packets, scores each device type, and automatically routes to the correct decoder.</p>
+    <div class="detect-cols">
+      <div>
+        <div class="score-bar reveal d1">
+          <div class="sb-head"><span class="sb-name">⌨ Keyboard score</span><span class="sb-val">8-byte packets, valid keycode</span></div>
+          <div class="bar-track"><div class="bar-fill bf-g" data-w="72"></div></div>
+        </div>
+        <div class="score-bar reveal d2">
+          <div class="sb-head"><span class="sb-name">🖱 Mouse score</span><span class="sb-val">4-byte, btn ∈ {0,1,2,3}</span></div>
+          <div class="bar-track"><div class="bar-fill bf-c" data-w="18"></div></div>
+        </div>
+        <div class="score-bar reveal d3">
+          <div class="sb-head"><span class="sb-name">📦 Bulk score</span><span class="sb-val">packets longer than 16 bytes</span></div>
+          <div class="bar-track"><div class="bar-fill bf-o" data-w="10"></div></div>
+        </div>
+        <div class="diagram-box reveal d1" style="margin-top:1.2rem;font-size:.71rem">
+          <div class="dm">// SCORING LOOP (first 100 packets)</div>
+          <pre>for raw in data_list[:100]:
+  if len(raw) == 8:
+    if raw[0] in MODS and raw[2] < 0x73:
+      keyboard_score += 1
+  elif len(raw) == 4:
+    if raw[0] in (0,1,2,3):
+      mouse_score += 1
+  elif len(raw) > 16:
+    bulk_score += 1
+
+detected = max(scores, key=scores.get)</pre>
+        </div>
+      </div>
+      <div>
+        <div class="criteria-box reveal d2">
+          <div class="crit-head"><span>// DETECTION CRITERIA</span></div>
+          <div class="crit-row"><span class="cr-type">KEYBOARD</span><span class="cr-rule">modifier valid AND keycode &lt; 0x73</span><span class="cr-sz">8 bytes</span></div>
+          <div class="crit-row"><span class="cr-type">MOUSE</span><span class="cr-rule">button byte ∈ {0x00, 0x01, 0x02, 0x03}</span><span class="cr-sz">4 bytes</span></div>
+          <div class="crit-row"><span class="cr-type">PRINTER</span><span class="cr-rule">bulk → PCL \x1b\x45 / PS %! / PDF %PDF</span><span class="cr-sz">&gt;16 bytes</span></div>
+          <div class="crit-row"><span class="cr-type">STORAGE</span><span class="cr-rule">bulk → file signature scan (12 types)</span><span class="cr-sz">&gt;16 bytes</span></div>
+        </div>
+        <div class="card reveal d3" style="margin-top:1rem">
+          <h3>Bulk Resolution</h3>
+          <p>When bulk score wins, the tool first runs printer detection via magic bytes, then the file carver. Both outputs are saved so you have every possible result from a single run.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OUTPUTS -->
+<section id="outputs">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Reference</span></div>
+    <h2 class="sec-title reveal d1">Output Files Reference</h2>
+    <p class="sec-sub reveal d2">Every file produced by the tool, which mode creates it, and what it contains.</p>
+    <div class="out-list">
+      <div class="out-row reveal d1"><span class="or-icon">📝</span><span class="or-file">keyboard_output.txt</span><span class="or-mode">--mode keyboard</span><span class="or-desc">All decoded keystrokes including special key labels and clean text</span></div>
+      <div class="out-row reveal d2"><span class="or-icon">🌫️</span><span class="or-file">mouse_all_movement.png</span><span class="or-mode">--mode mouse</span><span class="or-desc">Complete cursor path in light gray — 4000×4000 px canvas</span></div>
+      <div class="out-row reveal d1"><span class="or-icon">🔵</span><span class="or-file">mouse_clicks.png</span><span class="or-mode">--mode mouse</span><span class="or-desc">Left-click positions as filled dots — best for letter shapes</span></div>
+      <div class="out-row reveal d2"><span class="or-icon">✏️</span><span class="or-file">mouse_click_path.png</span><span class="or-mode">--mode mouse</span><span class="or-desc">Click positions connected as a line — reveals drawn text clearly</span></div>
+      <div class="out-row reveal d1"><span class="or-icon">🖨️</span><span class="or-file">printer_output.pcl / .ps / .pdf</span><span class="or-mode">--mode printer</span><span class="or-desc">Reconstructed print job — extension auto-detected from magic bytes</span></div>
+      <div class="out-row reveal d2"><span class="or-icon">📂</span><span class="or-file">extracted_1.png, extracted_2.zip …</span><span class="or-mode">--mode storage</span><span class="or-desc">Files carved from USB bulk transfer data by signature</span></div>
+      <div class="out-row reveal d1"><span class="or-icon">💾</span><span class="or-file">storage_raw.bin</span><span class="or-mode">--mode storage</span><span class="or-desc">Raw dump saved when no known file signatures are found</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TIPS -->
+<section id="tips">
+  <div class="container">
+    <div class="reveal"><span class="sec-label">Pro Tips</span></div>
+    <h2 class="sec-title reveal d1">CTF Tips &amp; Tricks</h2>
+    <p class="sec-sub reveal d2">Hard-earned strategies for each challenge type. Always start with <code style="color:var(--green);font-family:var(--mono)">--mode hex</code> to study packet patterns first.</p>
+    <div class="tips-grid">
+      <div class="tip-card tg reveal d1">
+        <h4>⌨️ Keyboard Tips</h4>
+        <div class="tip-item">If output is garbled, <b>check initial CapsLock state</b> — it may have been toggled before capture began</div>
+        <div class="tip-item">Look for <b>[CTRL+V]</b> — the flag may have been pasted, not typed character by character</div>
+        <div class="tip-item">Many backspaces? <b>Read the keylog in reverse</b> — the real input may be obscured by corrections</div>
+        <div class="tip-item">Use <code>grep -i 'flag\|ctf\|{' keyboard_output.txt</code> to search the saved output</div>
+      </div>
+      <div class="tip-card tc reveal d2">
+        <h4>🖱️ Mouse Tips</h4>
+        <div class="tip-item"><b>Open all 3 PNG files</b> — each reveals different visual information about the movement</div>
+        <div class="tip-item">Image too small? <b>Adjust start coordinates</b> from (2000,2000) to match actual origin</div>
+        <div class="tip-item">Check <b>right-click-only paths</b> too — some challenges use right-click to draw the flag</div>
+        <div class="tip-item">Canvas is 4000×4000 px — <b>zoom in heavily</b> on the click region in your image viewer</div>
+      </div>
+      <div class="tip-card to reveal d3">
+        <h4>🖨️ Printer Tips</h4>
+        <div class="tip-item">Open <b>.ps PostScript files in a text editor</b> — they may contain plaintext flag directly</div>
+        <div class="tip-item">PCL files often have <b>readable ASCII between binary sections</b> — worth scanning</div>
+        <div class="tip-item">Render with GhostScript: <code>gs -sDEVICE=png16m -o out.png file.ps</code></div>
+        <div class="tip-item">The tool automatically runs a <b>strings search</b> and prints any readable matches found</div>
+      </div>
+      <div class="tip-card tr reveal d4">
+        <h4>💾 Storage Tips</h4>
+        <div class="tip-item">Run <code>strings storage_raw.bin</code> <b>immediately</b> — flags often appear in plaintext</div>
+        <div class="tip-item">Use <code>binwalk storage_raw.bin</code> for <b>nested or compressed file detection</b></div>
+        <div class="tip-item">Password-protected ZIPs? Try the <b>rockyou.txt</b> wordlist with fcrackzip or john</div>
+        <div class="tip-item">Always start with <b><code>--mode hex</code></b> to study raw byte patterns before choosing a mode</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo reveal">Happy Hacking 🚩</div>
+  <p class="footer-tagline reveal d1">USB PCAP CTF Solver · All-in-One Toolkit · v1.0</p>
+  <div class="footer-cmd reveal d2">python usb_pcap_solver.py &lt;challenge.pcap&gt; --all</div>
+  <div class="footer-pills reveal d3">
+    <span class="fp">Python 3.6+</span><span class="fp">scapy</span><span class="fp">Pillow</span>
+    <span class="fp">4 Decoders</span><span class="fp">Auto Detection</span>
+    <span class="fp">File Carving</span><span class="fp">Regex Flag Hunt</span>
+  </div>
+  <p class="footer-copy reveal">USB PCAP CTF SOLVER · MANUAL v1.0</p>
+</footer>
+
+<script>
+// progress + nav scroll
+const prog = document.getElementById('progress');
+const nav  = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  prog.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+  nav.classList.toggle('scrolled', h.scrollTop > 10);
+  highlightNav();
+  animateBars();
+}, { passive: true });
+
+// active nav
+const secs = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.nav-links a');
+function highlightNav() {
+  let cur = '';
+  secs.forEach(s => { if (window.scrollY >= s.offsetTop - 100) cur = s.id; });
+  links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
+}
+
+// reveal on scroll
+const revEls = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+revEls.forEach(el => obs.observe(el));
+
+// score bars
+let barsTriggered = false;
+function animateBars() {
+  if (barsTriggered) return;
+  const first = document.querySelector('.bar-fill[data-w]');
+  if (!first) return;
+  if (first.getBoundingClientRect().top < window.innerHeight - 40) {
+    document.querySelectorAll('.bar-fill[data-w]').forEach(b => { b.style.width = b.dataset.w + '%'; });
+    barsTriggered = true;
+  }
+}
+
+// mobile menu
+function toggleMenu() {
+  document.getElementById('ham').classList.toggle('open');
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('ham').classList.remove('open');
+  document.getElementById('mobileMenu').classList.remove('open');
+}
+
+// mouse canvas
+const canvas = document.getElementById('mouseCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false, lx = 0, ly = 0;
+function resizeCanvas() { canvas.width = canvas.offsetWidth; canvas.height = 200; }
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas, { passive: true });
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  if (e.touches) return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function drawLine(e) {
+  if (!drawing) return;
+  const p = getPos(e);
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(p.x, p.y);
+  ctx.strokeStyle = '#1a3d5c'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
+  lx = p.x; ly = p.y;
+}
+canvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); lx = p.x; ly = p.y; });
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('mouseleave', () => drawing = false);
+canvas.addEventListener('mousemove', drawLine);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); lx = p.x; ly = p.y; }, { passive: false });
+canvas.addEventListener('touchend', () => drawing = false);
+canvas.addEventListener('touchmove', e => { e.preventDefault(); drawLine(e); }, { passive: false });
+function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+// init
+highlightNav(); animateBars();
+</script>
+</body>
+</html>

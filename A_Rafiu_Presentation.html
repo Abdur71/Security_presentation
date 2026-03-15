@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTF CRYPTO // COMPLETE GUIDE</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #06060a;
+  --bg1: #0b0b12;
+  --bg2: #0f0f18;
+  --violet: #8b5cf6;
+  --violet-bright: #a78bfa;
+  --magenta: #f0abfc;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --orange: #fb923c;
+  --white: #f0f0ff;
+  --muted: #52527a;
+  --border: rgba(139,92,246,0.18);
+  --border-bright: rgba(139,92,246,0.5);
+  --glow-v: 0 0 40px rgba(139,92,246,0.35);
+  --glow-c: 0 0 40px rgba(34,211,238,0.3);
+  --glow-m: 0 0 40px rgba(240,171,252,0.3);
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'DM Mono',monospace;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9000;opacity:0.6;
+}
+
+/* ── CUSTOM CURSOR ── */
+.cursor{position:fixed;width:12px;height:12px;background:var(--violet);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:transform 0.1s,width 0.2s,height 0.2s;box-shadow:0 0 20px var(--violet),0 0 40px rgba(139,92,246,0.5)}
+.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid rgba(139,92,246,0.5);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left 0.08s ease,top 0.08s ease}
+@media(hover:none){.cursor,.cursor-ring{display:none}body{cursor:auto}}
+
+/* ── SCROLL BAR ── */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--violet);border-radius:2px}
+
+/* ── SCROLL PROGRESS ── */
+.scroll-progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--violet),var(--cyan),var(--magenta));z-index:300;box-shadow:0 0 12px var(--violet);transition:width 0.1s linear}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:200;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 40px;
+  background:rgba(6,6,10,0.88);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px;letter-spacing:4px;
+  background:linear-gradient(90deg,var(--violet-bright),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.header-right{display:flex;align-items:center;gap:20px}
+.hbadge{
+  font-size:10px;letter-spacing:2px;color:var(--muted);
+  border:1px solid var(--border);padding:4px 12px;
+  background:rgba(139,92,246,0.06);
+}
+.hbadge span{color:var(--violet-bright)}
+#hclock{font-size:11px;color:var(--cyan);letter-spacing:2px;font-family:'Space Mono',monospace}
+
+/* ── SIDE NAV ── */
+.side-nav{
+  position:fixed;right:20px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:8px;z-index:100;
+}
+.snav-item{
+  width:6px;height:6px;border-radius:50%;
+  border:1px solid var(--muted);cursor:pointer;
+  transition:all 0.3s;position:relative;
+}
+.snav-item::after{
+  content:attr(data-label);
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:rgba(6,6,10,0.95);border:1px solid var(--border);
+  color:var(--violet-bright);font-size:9px;letter-spacing:2px;
+  padding:3px 8px;white-space:nowrap;opacity:0;pointer-events:none;
+  transition:opacity 0.2s;font-family:'Space Mono',monospace;
+}
+.snav-item:hover::after{opacity:1}
+.snav-item.active{background:var(--violet);border-color:var(--violet);box-shadow:0 0 12px rgba(139,92,246,0.8)}
+@media(max-width:768px){.side-nav{display:none}}
+
+/* ── SECTION BASE ── */
+.section{
+  position:relative;z-index:1;
+  min-height:100vh;padding:80px 40px;
+  display:flex;flex-direction:column;justify-content:center;
+  border-bottom:1px solid var(--border);
+  opacity:0;transform:translateY(40px);
+  transition:opacity 0.7s ease,transform 0.7s ease;
+}
+.section.visible{opacity:1;transform:translateY(0)}
+.section-inner{max-width:1160px;width:100%;margin:0 auto}
+
+/* ── BACKGROUND GEOMETRY ── */
+.section::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 80% 20%,rgba(139,92,246,0.04) 0%,transparent 60%);
+}
+
+/* ── HERO ── */
+#s0{text-align:left;padding-top:120px;background:var(--bg)}
+.hero-eyebrow{
+  font-size:11px;letter-spacing:6px;color:var(--violet);
+  margin-bottom:28px;display:flex;align-items:center;gap:12px;
+  text-transform:uppercase;
+}
+.hero-eyebrow::before{content:'';width:32px;height:1px;background:var(--violet)}
+.hero-eyebrow .pulse{
+  width:7px;height:7px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 10px var(--cyan);
+  animation:hpulse 1.2s infinite;
+}
+@keyframes hpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.5)}}
+
+.hero-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(72px,13vw,190px);
+  line-height:0.88;
+  letter-spacing:-2px;
+  margin-bottom:8px;
+  position:relative;
+}
+.ht-line1{color:var(--white)}
+.ht-line2{
+  -webkit-text-stroke:2px var(--violet);
+  color:transparent;
+  display:block;
+}
+.ht-line3{
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  display:block;
+}
+
+/* glitch on title */
+.hero-title:hover .ht-line1{animation:glitch 0.3s steps(1) both}
+@keyframes glitch{
+  0%{transform:none;color:var(--white)}
+  25%{transform:translate(-3px,1px);color:var(--cyan);text-shadow:3px 0 var(--magenta)}
+  50%{transform:translate(3px,-1px);color:var(--magenta);text-shadow:-3px 0 var(--cyan)}
+  75%{transform:translate(-1px,2px);color:var(--white)}
+  100%{transform:none}
+}
+
+.hero-sub{
+  font-size:13px;color:var(--muted);letter-spacing:3px;
+  text-transform:uppercase;margin-top:24px;max-width:480px;line-height:2;
+}
+.hero-sub span{color:var(--cyan)}
+
+.hero-stats{
+  display:flex;gap:0;margin-top:52px;
+  border:1px solid var(--border);
+  width:fit-content;
+}
+.hstat{
+  padding:20px 32px;border-right:1px solid var(--border);
+  min-width:140px;
+}
+.hstat:last-child{border-right:none}
+.hstat-val{
+  font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1;
+  background:linear-gradient(135deg,var(--white),var(--violet-bright));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hstat-label{font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:4px;text-transform:uppercase}
+
+.scroll-hint{
+  margin-top:56px;font-size:10px;letter-spacing:4px;
+  color:rgba(139,92,246,0.4);
+  display:flex;align-items:center;gap:10px;
+}
+.scroll-hint::before{
+  content:'';width:40px;height:1px;
+  background:linear-gradient(90deg,var(--violet),transparent);
+}
+
+/* ── SECTION HEADER ── */
+.section-num{font-size:10px;letter-spacing:5px;color:rgba(139,92,246,0.4);margin-bottom:8px}
+.slide-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(40px,6vw,80px);
+  line-height:1;letter-spacing:2px;
+  color:var(--white);margin-bottom:12px;
+}
+.slide-title .c-v{color:var(--violet-bright)}
+.slide-title .c-c{color:var(--cyan)}
+.slide-title .c-m{color:var(--magenta)}
+.slide-subtitle{
+  font-size:10px;letter-spacing:3px;
+  color:var(--muted);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-bottom:40px;
+}
+.stag{
+  padding:3px 10px;font-size:9px;letter-spacing:2px;
+  border:1px solid;text-transform:uppercase;
+}
+.stag-v{border-color:rgba(139,92,246,0.5);color:var(--violet-bright);background:rgba(139,92,246,0.08)}
+.stag-c{border-color:rgba(34,211,238,0.5);color:var(--cyan);background:rgba(34,211,238,0.08)}
+.stag-m{border-color:rgba(240,171,252,0.5);color:var(--magenta);background:rgba(240,171,252,0.08)}
+.stag-o{border-color:rgba(251,146,60,0.5);color:var(--orange);background:rgba(251,146,60,0.08)}
+
+/* ── LAYOUT ── */
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.cols-45{display:grid;grid-template-columns:45% 1fr;gap:24px}
+@media(max-width:900px){.cols2,.cols-45,.cols3{grid-template-columns:1fr}}
+
+/* ── PANEL ── */
+.panel{
+  background:var(--bg1);
+  border:1px solid var(--border);
+  padding:22px 24px;
+  position:relative;
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+.panel:hover{border-color:var(--border-bright);box-shadow:var(--glow-v)}
+.panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--violet),transparent);
+}
+.panel-title{
+  font-size:10px;letter-spacing:3px;color:var(--violet);
+  text-transform:uppercase;margin-bottom:18px;
+  display:flex;align-items:center;gap:10px;
+}
+.panel-title::before{content:'//';color:var(--cyan);font-size:12px}
+
+/* ── ACCENT PANELS ── */
+.panel.cyan-accent{border-color:rgba(34,211,238,0.2)}
+.panel.cyan-accent::before{background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.panel.cyan-accent:hover{border-color:rgba(34,211,238,0.5);box-shadow:var(--glow-c)}
+.panel.cyan-accent .panel-title{color:var(--cyan)}
+
+.panel.magenta-accent{border-color:rgba(240,171,252,0.2)}
+.panel.magenta-accent::before{background:linear-gradient(90deg,transparent,var(--magenta),transparent)}
+.panel.magenta-accent:hover{border-color:rgba(240,171,252,0.5);box-shadow:var(--glow-m)}
+.panel.magenta-accent .panel-title{color:var(--magenta)}
+
+/* ── FLOW ── */
+.flow{display:flex;flex-direction:column;gap:2px}
+.flow-step{position:relative}
+.flow-box{
+  padding:11px 18px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-left:2px solid var(--violet);
+  font-size:12px;color:var(--white);
+  letter-spacing:0.5px;line-height:1.5;
+  transition:all 0.25s;cursor:default;
+}
+.flow-box:hover{background:rgba(139,92,246,0.1);border-left-color:var(--cyan);padding-left:24px}
+.flow-num{color:var(--cyan);font-weight:700;margin-right:10px;font-size:11px}
+.flow-arrow{text-align:center;color:rgba(139,92,246,0.3);font-size:11px;padding:2px 0;letter-spacing:3px}
+
+/* ── LIST ── */
+.hack-list{list-style:none}
+.hack-list li{
+  padding:10px 0;border-bottom:1px solid rgba(139,92,246,0.08);
+  font-size:12px;display:flex;align-items:flex-start;
+  gap:12px;line-height:1.65;color:rgba(240,240,255,0.8);
+}
+.hack-list li::before{
+  content:'▸';color:var(--cyan);font-size:10px;
+  margin-top:3px;flex-shrink:0;
+}
+.hack-list li:last-child{border-bottom:none}
+.hack-list b{color:var(--white)}
+
+/* ── CODE ── */
+.code-block{
+  background:#050508;
+  border:1px solid rgba(139,92,246,0.15);
+  border-left:2px solid var(--violet);
+  padding:16px 18px;font-size:11px;line-height:2;
+  overflow-x:auto;white-space:pre;
+  position:relative;font-family:'Space Mono',monospace;
+}
+.code-block .comment{color:rgba(139,92,246,0.45)}
+.code-block .keyword{color:var(--cyan)}
+.code-block .string{color:var(--orange)}
+.code-block .func{color:var(--violet-bright)}
+.code-block .num{color:var(--magenta)}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{
+  background:rgba(139,92,246,0.12);color:var(--violet-bright);
+  padding:10px 14px;text-align:left;
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;
+  border-bottom:1px solid var(--border-bright);font-weight:400;
+}
+td{
+  padding:10px 14px;border-bottom:1px solid rgba(139,92,246,0.07);
+  color:rgba(240,240,255,0.75);line-height:1.5;vertical-align:top;
+}
+tr:hover td{background:rgba(139,92,246,0.06);color:var(--white)}
+td b{color:var(--white)}
+
+/* ── HIGHLIGHT BOX ── */
+.hbox{
+  padding:18px 20px;font-size:12px;line-height:1.8;position:relative;
+  overflow:hidden;
+}
+.hbox.violet{
+  background:rgba(139,92,246,0.08);
+  border:1px solid rgba(139,92,246,0.3);
+  color:var(--violet-bright);
+}
+.hbox.cyan{
+  background:rgba(34,211,238,0.06);
+  border:1px solid rgba(34,211,238,0.3);
+  color:var(--cyan);
+}
+.hbox.orange{
+  background:rgba(251,146,60,0.06);
+  border:1px solid rgba(251,146,60,0.3);
+  color:var(--orange);
+}
+.hbox-label{
+  font-family:'Bebas Neue',sans-serif;font-size:14px;
+  letter-spacing:3px;margin-bottom:8px;display:block;
+}
+.hbox::after{
+  content:'';position:absolute;top:-20px;right:-20px;
+  width:80px;height:80px;border-radius:50%;
+  background:currentColor;opacity:0.05;
+}
+
+/* ── CIPHER DEMO ── */
+.cipher-demo{
+  background:#050508;border:1px solid var(--border);
+  padding:16px;font-family:'Space Mono',monospace;font-size:12px;
+}
+.cipher-row{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.cipher-row:last-child{margin-bottom:0}
+.cipher-label{color:var(--muted);width:80px;font-size:10px;letter-spacing:2px;flex-shrink:0}
+.cipher-val{color:var(--orange);letter-spacing:2px}
+.cipher-res{color:var(--cyan);letter-spacing:2px}
+.cipher-arrow{color:rgba(139,92,246,0.4);font-size:14px}
+
+/* ── TOOL PILL ── */
+.tool-pill{
+  display:inline-block;
+  background:rgba(139,92,246,0.1);
+  border:1px solid rgba(139,92,246,0.3);
+  color:var(--violet-bright);font-size:10px;
+  padding:3px 10px;margin:3px;letter-spacing:1px;
+  transition:all 0.2s;cursor:default;
+  font-family:'Space Mono',monospace;
+}
+.tool-pill:hover{background:rgba(139,92,246,0.25);border-color:var(--violet-bright);box-shadow:0 0 14px rgba(139,92,246,0.3)}
+
+/* ── INLINE FLAG ── */
+.iflag{
+  font-family:'Space Mono',monospace;
+  background:rgba(240,171,252,0.1);
+  border:1px solid rgba(240,171,252,0.4);
+  color:var(--magenta);
+  padding:2px 10px;font-size:11px;letter-spacing:1px;
+}
+
+/* ── MINDMAP GRID ── */
+.mindmap{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.mindmap{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.mindmap{grid-template-columns:1fr}}
+
+.mcard{
+  background:var(--bg1);border:1px solid var(--border);
+  padding:18px;transition:all 0.3s;position:relative;overflow:hidden;
+  cursor:default;
+}
+.mcard:hover{
+  border-color:var(--border-bright);
+  transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(139,92,246,0.2);
+}
+.mcard::before{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--violet),transparent);
+  transform:scaleX(0);transition:transform 0.4s ease;
+}
+.mcard:hover::before{transform:scaleX(1)}
+.mcard-title{
+  font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;
+  color:var(--violet-bright);margin-bottom:14px;
+  text-transform:uppercase;
+}
+.mcard-body{font-size:11px;color:var(--muted);line-height:2.1}
+.mcard-body span{color:rgba(240,240,255,0.65)}
+
+/* ── FREQ BARS ── */
+.freq-wrap{display:flex;gap:4px;align-items:flex-end;height:80px;margin-top:12px}
+.fbar{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.fbar-fill{width:100%;border-radius:1px 1px 0 0;transition:height 0.6s cubic-bezier(.4,0,.2,1)}
+.fbar-label{font-size:9px;letter-spacing:1px}
+
+/* ── RSA FORMULA ── */
+.formula{
+  background:#050508;border:1px solid var(--border);
+  padding:20px 24px;font-size:14px;line-height:2.8;
+  font-family:'Space Mono',monospace;
+}
+.fvar{color:var(--cyan);font-size:16px}
+.fop{color:rgba(139,92,246,0.5);margin:0 8px}
+.fcom{font-size:11px;color:var(--muted);letter-spacing:2px}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:20px 0}
+
+/* ── FINAL / HERO SECTION ── */
+#s9{text-align:center;background:var(--bg)}
+.final-big{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(42px,9vw,120px);
+  line-height:0.9;letter-spacing:2px;margin:20px 0;
+}
+.final-big span{
+  background:linear-gradient(90deg,var(--violet-bright),var(--cyan),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.final-flag{
+  font-family:'Space Mono',monospace;
+  display:inline-block;
+  background:rgba(240,171,252,0.07);
+  border:1px solid rgba(240,171,252,0.4);
+  color:var(--magenta);
+  padding:14px 32px;font-size:16px;letter-spacing:3px;
+  margin:24px 0;
+  box-shadow:0 0 40px rgba(240,171,252,0.15);
+  animation:flagpulse 3s infinite;
+}
+@keyframes flagpulse{0%,100%{box-shadow:0 0 40px rgba(240,171,252,0.15)}50%{box-shadow:0 0 60px rgba(240,171,252,0.35)}}
+
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px;text-align:left}
+@media(max-width:768px){.res-grid{grid-template-columns:1fr}}
+
+/* ── BACK TO TOP ── */
+.back-top{
+  position:fixed;bottom:24px;right:24px;
+  background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);
+  color:var(--violet-bright);font-family:'Space Mono',monospace;
+  font-size:10px;letter-spacing:2px;padding:8px 16px;
+  cursor:pointer;z-index:100;transition:all 0.2s;
+  opacity:0;pointer-events:none;
+}
+.back-top.show{opacity:1;pointer-events:all}
+.back-top:hover{background:rgba(139,92,246,0.3);box-shadow:var(--glow-v)}
+
+/* ── BIG SECTION BG NUMBERS ── */
+.bg-num{
+  position:absolute;right:40px;top:60px;
+  font-family:'Bebas Neue',sans-serif;font-size:200px;
+  color:rgba(139,92,246,0.035);line-height:1;pointer-events:none;z-index:0;
+  letter-spacing:-8px;
+}
+
+@media(max-width:768px){
+  header{padding:12px 20px}
+  .section{padding:60px 20px}
+  .hero-stats{flex-wrap:wrap}
+  .hstat{min-width:120px}
+  .bg-num{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="scroll-progress" class="scroll-progress" style="width:0%"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">CTF :: CRYPTO_GUIDE</div>
+  <div class="header-right">
+    <div class="hbadge"><span>SYS</span> ONLINE</div>
+    <div id="hclock">00:00:00</div>
+  </div>
+</header>
+
+<!-- SIDE NAV -->
+<div class="side-nav" id="sideNav"></div>
+
+<!-- BACK TO TOP -->
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ TOP</button>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="section" id="s0">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="hero-eyebrow"><div class="pulse"></div>CTF CRYPTOGRAPHY — COMPLETE GUIDE</div>
+    <div class="hero-title">
+      <span class="ht-line1">CRACK</span>
+      <span class="ht-line2">THE</span>
+      <span class="ht-line3">CIPHER</span>
+    </div>
+    <p class="hero-sub">Beginner → Advanced · <span>10 Modules</span> · 50+ Techniques · Infinite Flags</p>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val">10</div><div class="hstat-label">Modules</div></div>
+      <div class="hstat"><div class="hstat-val">50+</div><div class="hstat-label">Techniques</div></div>
+      <div class="hstat"><div class="hstat-val">∞</div><div class="hstat-label">Flags</div></div>
+      <div class="hstat"><div class="hstat-val">100%</div><div class="hstat-label">Free</div></div>
+    </div>
+    <div class="scroll-hint">SCROLL TO BEGIN</div>
+  </div>
+  <!-- decorative -->
+  <svg style="position:absolute;right:60px;top:50%;transform:translateY(-50%);opacity:0.06;pointer-events:none;animation:slowspin 60s linear infinite" width="440" height="440" viewBox="0 0 440 440">
+    <circle cx="220" cy="220" r="200" fill="none" stroke="#8b5cf6" stroke-width="0.8"/>
+    <circle cx="220" cy="220" r="160" fill="none" stroke="#22d3ee" stroke-width="0.5"/>
+    <circle cx="220" cy="220" r="120" fill="none" stroke="#8b5cf6" stroke-width="1"/>
+    <circle cx="220" cy="220" r="80" fill="none" stroke="#f0abfc" stroke-width="0.6"/>
+    <circle cx="220" cy="220" r="40" fill="none" stroke="#8b5cf6" stroke-width="1.2"/>
+    <line x1="220" y1="20" x2="220" y2="420" stroke="#8b5cf6" stroke-width="0.3"/>
+    <line x1="20" y1="220" x2="420" y2="220" stroke="#22d3ee" stroke-width="0.3"/>
+    <line x1="78" y1="78" x2="362" y2="362" stroke="#8b5cf6" stroke-width="0.3"/>
+    <line x1="362" y1="78" x2="78" y2="362" stroke="#8b5cf6" stroke-width="0.3"/>
+    <polygon points="220,20 280,80 280,160 220,200 160,160 160,80" fill="none" stroke="#f0abfc" stroke-width="1"/>
+  </svg>
+  <style>@keyframes slowspin{from{transform:translateY(-50%) rotate(0)}to{transform:translateY(-50%) rotate(360deg)}}</style>
+</section>
+
+<!-- ═══════════ MODULE 01 — MINDSET ═══════════ -->
+<section class="section" id="s1">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">01</div>
+    <div class="section-num">// MODULE 01</div>
+    <div class="slide-title">THE <span class="c-v">HACKER</span> MINDSET</div>
+    <div class="slide-subtitle"><span class="stag stag-v">FOUNDATIONS</span></div>
+    <div class="cols-45">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">APPROACH STRATEGY</div>
+          <div class="flow">
+            <div class="flow-step"><div class="flow-box"><span class="flow-num">01</span> Read the challenge description</div></div>
+            <div class="flow-arrow">↓ ↓ ↓</div>
+            <div class="flow-step"><div class="flow-box"><span class="flow-num">02</span> Identify cipher type / hints</div></div>
+            <div class="flow-arrow">↓ ↓ ↓</div>
+            <div class="flow-step"><div class="flow-box"><span class="flow-num">03</span> Analyze ciphertext structure</div></div>
+            <div class="flow-arrow">↓ ↓ ↓</div>
+            <div class="flow-step"><div class="flow-box"><span class="flow-num">04</span> Pick attack vector</div></div>
+            <div class="flow-arrow">↓ ↓ ↓</div>
+            <div class="flow-step"><div class="flow-box" style="border-left-color:var(--cyan)"><span class="flow-num">05</span> Extract flag 🚩</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">GOLDEN RULES</div>
+          <ul class="hack-list">
+            <li>The challenge <b>NAME and DESCRIPTION</b> always contain hints. Read carefully.</li>
+            <li>Check encoding first — most "crypto" is just Base64/Hex/ROT13.</li>
+            <li>CTF crypto rarely uses unbroken modern ciphers. Look for <b>bad implementations</b>.</li>
+            <li>Google is your best friend. Paste ciphertext into <b>CyberChef</b> immediately.</li>
+            <li>Flag format is usually <span class="iflag">flag{...}</span> — use it as a crib!</li>
+            <li>No randomness? Predictable keys? Weak parameters? That's your attack surface.</li>
+          </ul>
+        </div>
+        <div class="hbox cyan">
+          <span class="hbox-label">⚡ PRO TIP</span>
+          CTF crypto is about finding the MISTAKE. Every challenge has a deliberate vulnerability. Your job is to find it, not to break real cryptography.
+        </div>
+        <div class="panel">
+          <div class="panel-title">ESSENTIAL TOOLS</div>
+          <div style="line-height:2;margin-top:4px">
+            <span class="tool-pill">CyberChef</span><span class="tool-pill">Python3</span><span class="tool-pill">pwntools</span>
+            <span class="tool-pill">SageMath</span><span class="tool-pill">dcode.fr</span><span class="tool-pill">factordb</span>
+            <span class="tool-pill">RsaCtfTool</span><span class="tool-pill">hashcat</span><span class="tool-pill">john</span><span class="tool-pill">openssl</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 02 — ENCODING ═══════════ -->
+<section class="section" id="s2">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">02</div>
+    <div class="section-num">// MODULE 02</div>
+    <div class="slide-title">ENCODING <span class="c-c">VS</span> CRYPTO</div>
+    <div class="slide-subtitle"><span class="stag stag-c">BEGINNER</span></div>
+    <div class="cols-45">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel cyan-accent">
+          <div class="panel-title">RECOGNIZE ON SIGHT</div>
+          <table>
+            <tr><th>PATTERN</th><th>TYPE</th></tr>
+            <tr><td><span style="color:var(--orange)">A-Za-z0-9+/=</span></td><td>Base64</td></tr>
+            <tr><td><span style="color:var(--orange)">0-9 A-F pairs</span></td><td>Hex</td></tr>
+            <tr><td><span style="color:var(--orange)">%XX sequences</span></td><td>URL encode</td></tr>
+            <tr><td><span style="color:var(--orange)">&amp;#XX; or &amp;#xXX;</span></td><td>HTML entity</td></tr>
+            <tr><td><span style="color:var(--orange)">dots &amp; dashes</span></td><td>Morse code</td></tr>
+            <tr><td><span style="color:var(--orange)">0s and 1s</span></td><td>Binary</td></tr>
+            <tr><td><span style="color:var(--orange)">Shifted alpha</span></td><td>ROT/Caesar</td></tr>
+          </table>
+        </div>
+        <div class="hbox violet">
+          <span class="hbox-label">🔑 KEY INSIGHT</span>
+          Encoding is NOT encryption. There's no key — anyone can reverse it. Always try CyberChef "Magic" mode first.
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">DECODE CHAIN EXAMPLE</div>
+          <div class="cipher-demo">
+            <div class="cipher-row"><span class="cipher-label">INPUT</span><span class="cipher-arrow">→</span><span class="cipher-val">ZmxhZ3tj...</span></div>
+            <div class="cipher-row"><span class="cipher-label">BASE64</span><span class="cipher-arrow">→</span><span class="cipher-val">666c61677b63...</span></div>
+            <div class="cipher-row"><span class="cipher-label">HEX</span><span class="cipher-arrow">→</span><span class="cipher-res">flag{c...</span></div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--muted)">Sometimes chains are 3–5 layers deep. Keep decoding!</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">PYTHON ONE-LINERS</div>
+          <div class="code-block"><span class="comment"># Base64 decode</span>
+<span class="keyword">import</span> base64
+base64.b64decode(<span class="string">"ZmxhZ3t..."</span>)
+
+<span class="comment"># Hex decode</span>
+bytes.fromhex(<span class="string">"666c6167"</span>)
+
+<span class="comment"># ROT13</span>
+<span class="string">"uryyb"</span>.encode().decode(<span class="string">'rot_13'</span>)
+
+<span class="comment"># Binary to text</span>
+<span class="string">"01100110"</span> → int(<span class="num">2</span>) → chr()</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 03 — CLASSICAL ═══════════ -->
+<section class="section" id="s3">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">03</div>
+    <div class="section-num">// MODULE 03</div>
+    <div class="slide-title">CLASSICAL <span class="c-m">CIPHERS</span></div>
+    <div class="slide-subtitle"><span class="stag stag-c">EASY</span></div>
+    <div class="cols2">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">COMMON TYPES</div>
+          <table>
+            <tr><th>CIPHER</th><th>ATTACK METHOD</th></tr>
+            <tr><td><b>Caesar</b></td><td>Brute 26 shifts</td></tr>
+            <tr><td><b>Vigenère</b></td><td>Kasiski + freq analysis</td></tr>
+            <tr><td><b>Atbash</b></td><td>A↔Z mirror, instant</td></tr>
+            <tr><td><b>Rail Fence</b></td><td>Brute rail count</td></tr>
+            <tr><td><b>Playfair</b></td><td>Freq analysis</td></tr>
+            <tr><td><b>Affine</b></td><td>Brute 312 key combos</td></tr>
+            <tr><td><b>Substitution</b></td><td>Freq + pattern match</td></tr>
+            <tr><td><b>Polybius</b></td><td>Recognize number pairs</td></tr>
+          </table>
+        </div>
+        <div class="panel magenta-accent">
+          <div class="panel-title">FREQUENCY ANALYSIS — THE MASTER KEY</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">English letter frequencies (most → least):</div>
+          <div class="freq-wrap" id="freqBars"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:12px">Most frequent cipher char → likely encrypts <span style="color:var(--orange)">'E'</span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">VIGENÈRE ATTACK SCRIPT</div>
+          <div class="code-block"><span class="comment"># Step 1: Find key length (Kasiski)</span>
+<span class="keyword">from</span> collections <span class="keyword">import</span> Counter
+<span class="comment"># Find repeated trigrams, GCD of gaps = key length</span>
+
+<span class="comment"># Step 2: Split by key length, freq analyze each</span>
+<span class="keyword">for</span> i <span class="keyword">in</span> range(key_len):
+    col = ciphertext[i::key_len]
+    <span class="comment"># Most freq char - 'E'(4) = key[i]</span>
+
+<span class="comment"># OR just use: dcode.fr/vigenere-cipher</span></div>
+        </div>
+        <div class="hbox orange">
+          <span class="hbox-label">⚡ QUICK WIN</span>
+          For any monoalphabetic substitution, frequency analysis is almost always the fastest route. 'E' is ~12.7% of English text.
+        </div>
+        <div class="panel">
+          <div class="panel-title">DCODE.FR WORKFLOW</div>
+          <ul class="hack-list">
+            <li>Paste ciphertext → "Cipher Identifier" to get candidates ranked by probability</li>
+            <li>For Caesar: automated solver tries all 25 offsets simultaneously</li>
+            <li>For Vigenère: enter key length estimate or let it auto-detect</li>
+            <li>For unknown symbol ciphers: use "Symbol Cipher" image recognizer</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 04 — RSA ═══════════ -->
+<section class="section" id="s4">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">04</div>
+    <div class="section-num">// MODULE 04</div>
+    <div class="slide-title">RSA <span class="c-v">ATTACKS</span></div>
+    <div class="slide-subtitle"><span class="stag stag-o">INTERMEDIATE</span></div>
+    <div class="cols-45">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">RSA FUNDAMENTALS</div>
+          <div class="formula">
+            <div><span class="fvar">n</span><span class="fop">=</span>p × q<span class="fcom" style="margin-left:16px">// public modulus</span></div>
+            <div><span class="fvar">e</span><span class="fop">=</span>public exponent<span class="fcom" style="margin-left:16px">// often 65537</span></div>
+            <div><span class="fvar">d</span><span class="fop">=</span>private key</div>
+            <div><span class="fvar">C</span><span class="fop">=</span>M<sup style="color:var(--magenta)">e</sup> mod n</div>
+            <div><span class="fvar">M</span><span class="fop">=</span>C<sup style="color:var(--magenta)">d</sup> mod n</div>
+          </div>
+        </div>
+        <div class="hbox violet">
+          <span class="hbox-label">🎯 ATTACK GOAL</span>
+          Factor n → get p,q → compute φ(n) → compute d → decrypt.
+        </div>
+        <div class="panel">
+          <div class="panel-title">RSACTFTOOL — ONE SHOT</div>
+          <div class="code-block"><span class="comment"># Auto-tries all known attacks</span>
+python3 RsaCtfTool.py \
+  --publickey key.pem \
+  --uncipherfile flag.enc \
+  --attack all
+
+<span class="comment"># Or with known n and e:</span>
+python3 RsaCtfTool.py \
+  --n <span class="num">1234567...</span> --e <span class="num">65537</span> \
+  --attack all</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel" style="flex:1">
+          <div class="panel-title">COMMON RSA VULNERABILITIES</div>
+          <table>
+            <tr><th>VULN</th><th>CONDITION</th><th>TOOL</th></tr>
+            <tr><td><b>Small n</b></td><td>n &lt; 512 bit</td><td><span class="tool-pill" style="font-size:9px;padding:1px 7px">factordb</span></td></tr>
+            <tr><td><b>Small e=3</b></td><td>m³ &lt; n</td><td>cube root</td></tr>
+            <tr><td><b>Same n, diff e</b></td><td>gcd(e1,e2)=1</td><td>common modulus</td></tr>
+            <tr><td><b>Same e, diff n</b></td><td>e=3, 3 msgs</td><td>Hastad broadcast</td></tr>
+            <tr><td><b>Shared prime</b></td><td>two keys</td><td>GCD attack</td></tr>
+            <tr><td><b>Wiener's</b></td><td>small d</td><td><span class="tool-pill" style="font-size:9px;padding:1px 7px">RsaCtfTool</span></td></tr>
+            <tr><td><b>LSB oracle</b></td><td>decryption oracle</td><td>binary search</td></tr>
+            <tr><td><b>Parity oracle</b></td><td>padding check</td><td>adaptive chosen</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 05 — AES ═══════════ -->
+<section class="section" id="s5">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">05</div>
+    <div class="section-num">// MODULE 05</div>
+    <div class="slide-title">AES <span class="c-c">&amp;</span> BLOCK CIPHERS</div>
+    <div class="slide-subtitle"><span class="stag stag-o">INTERMEDIATE</span></div>
+    <div class="cols-45">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel cyan-accent">
+          <div class="panel-title">AES MODES — KNOW YOUR TARGET</div>
+          <table>
+            <tr><th>MODE</th><th>VULNERABILITY</th></tr>
+            <tr><td><b>ECB</b></td><td style="color:#f87171">SAME BLOCK = SAME CT ⚠</td></tr>
+            <tr><td><b>CBC</b></td><td>Bit-flip, padding oracle</td></tr>
+            <tr><td><b>CTR</b></td><td>Nonce reuse → XOR leak</td></tr>
+            <tr><td><b>GCM</b></td><td>Nonce reuse → key recovery</td></tr>
+            <tr><td><b>OFB</b></td><td>Nonce reuse → keystream</td></tr>
+          </table>
+        </div>
+        <div class="hbox orange">
+          <span class="hbox-label">⚡ ECB PENGUIN</span>
+          ECB encrypts each 16-byte block independently. Identical plaintext blocks produce identical ciphertext — patterns leak!
+        </div>
+        <div class="panel">
+          <div class="panel-title">ECB BYTE-AT-A-TIME</div>
+          <ul class="hack-list">
+            <li>Pad input so unknown secret byte is last in block</li>
+            <li>Brute-force all 256 values for that position</li>
+            <li>Match against oracle output to reveal byte</li>
+            <li>Repeat for each byte of secret</li>
+          </ul>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">CBC PADDING ORACLE</div>
+          <div class="code-block"><span class="comment"># 1. Have encryption oracle + padding check</span>
+<span class="comment"># 2. Flip bits in C[i-1] to find valid padding</span>
+<span class="comment"># 3. P[i][j] = 0x01 XOR modified_C[i-1][j]</span>
+<span class="comment"># 4. Repeat for full block → full plaintext</span>
+
+<span class="keyword">from</span> pwntools <span class="keyword">import</span> *
+
+<span class="comment"># pwntools has padding oracle solver!</span>
+<span class="func">pwnlib.util.iters.bruteforce</span>()</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">CTR NONCE REUSE — CRITICAL BUG</div>
+          <div class="code-block"><span class="comment"># Two messages, same key+nonce:</span>
+C1 = P1 XOR keystream
+C2 = P2 XOR keystream
+
+<span class="comment"># XOR ciphertexts → XOR plaintexts</span>
+C1 XOR C2 = P1 XOR P2
+
+<span class="comment"># If you know P1 → recover P2!</span>
+<span class="comment"># Known-plaintext: submit your own P1</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 06 — HASH ═══════════ -->
+<section class="section" id="s6">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">06</div>
+    <div class="section-num">// MODULE 06</div>
+    <div class="slide-title">HASH <span class="c-m">CRACKING</span></div>
+    <div class="slide-subtitle"><span class="stag stag-v">ALL LEVELS</span></div>
+    <div class="cols2">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">IDENTIFY THE HASH</div>
+          <table>
+            <tr><th>LENGTH</th><th>TYPE</th></tr>
+            <tr><td>32 hex</td><td>MD5</td></tr>
+            <tr><td>40 hex</td><td>SHA-1</td></tr>
+            <tr><td>64 hex</td><td>SHA-256</td></tr>
+            <tr><td>96 hex</td><td>SHA-384</td></tr>
+            <tr><td>128 hex</td><td>SHA-512</td></tr>
+            <tr><td>$2b$...</td><td>bcrypt</td></tr>
+            <tr><td>$6$...</td><td>sha512crypt</td></tr>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-title">ATTACK TYPES</div>
+          <ul class="hack-list">
+            <li><b>Online lookup</b> — crackstation.net, hashes.com</li>
+            <li><b>Dictionary</b> — rockyou.txt + hashcat</li>
+            <li><b>Brute force</b> — short/numeric hashes</li>
+            <li><b>Rainbow table</b> — precomputed unsalted</li>
+          </ul>
+        </div>
+        <div class="hbox cyan">
+          <span class="hbox-label">⚡ QUICK WIN</span>
+          Always check crackstation.net first — 15 billion hashes in their database. Most CTF hashes crack instantly.
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">HASHCAT COMMANDS</div>
+          <div class="code-block"><span class="comment"># MD5 dictionary attack</span>
+hashcat -m <span class="num">0</span> hash.txt rockyou.txt
+
+<span class="comment"># SHA-256 brute (6 chars)</span>
+hashcat -m <span class="num">1400</span> hash.txt -a <span class="num">3</span> ?a?a?a?a?a?a
+
+<span class="comment"># Show cracked</span>
+hashcat -m <span class="num">0</span> hash.txt --show
+
+<span class="comment"># Rules for mutations</span>
+hashcat -m <span class="num">0</span> hash.txt rockyou.txt \
+  -r rules/best64.rule</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">LENGTH EXTENSION ATTACK</div>
+          <div class="code-block"><span class="comment"># Vulnerable: MAC = hash(secret || msg)</span>
+<span class="comment"># MD5/SHA-1/SHA-256 are vulnerable</span>
+<span class="comment"># SHA-3/HMAC are NOT</span>
+
+<span class="keyword">import</span> hlextend
+sha = hlextend.new(<span class="string">'sha256'</span>)
+new_msg, new_sig = sha.extend(
+    append=<span class="string">b'&amp;admin=true'</span>,
+    knownData=<span class="string">b'user=alice'</span>,
+    key_length=<span class="num">16</span>,
+    knownSig=known_hash
+)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 07 — XOR ═══════════ -->
+<section class="section" id="s7">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">07</div>
+    <div class="section-num">// MODULE 07</div>
+    <div class="slide-title">XOR <span class="c-c">&amp;</span> STREAM CIPHERS</div>
+    <div class="slide-subtitle"><span class="stag stag-o">INTERMEDIATE</span></div>
+    <div class="cols-45">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel magenta-accent">
+          <div class="panel-title">XOR PROPERTIES (MEMORIZE)</div>
+          <div class="formula" style="font-size:13px;line-height:2.8">
+            <div><span style="color:var(--orange)">A XOR A</span><span class="fop">=</span><span style="color:var(--cyan)">0</span></div>
+            <div><span style="color:var(--orange)">A XOR 0</span><span class="fop">=</span><span style="color:var(--cyan)">A</span></div>
+            <div><span style="color:var(--violet-bright)">C XOR K</span><span class="fop">=</span><span style="color:var(--white)">P</span></div>
+            <div><span style="color:var(--magenta)">C XOR P</span><span class="fop">=</span><span style="color:var(--cyan)">K</span><span style="font-size:10px;color:var(--muted);margin-left:12px">← KEY RECOVERY!</span></div>
+            <div><span style="color:var(--violet-bright)">C1 XOR C2</span><span class="fop">=</span><span style="color:var(--orange)">P1 XOR P2</span></div>
+          </div>
+        </div>
+        <div class="hbox violet">
+          <span class="hbox-label">🔑 CRIB DRAG</span>
+          If you know part of the plaintext (like "flag{"), XOR it with ciphertext at each offset. When you get readable output, you've found the keystream portion.
+        </div>
+        <div class="panel">
+          <div class="panel-title">LFSR ATTACKS</div>
+          <ul class="hack-list">
+            <li>LFSR output is periodic and predictable from sufficient output bits.</li>
+            <li>Berlekamp-Massey algorithm recovers feedback polynomial from ~2n bits.</li>
+            <li>Tool: <span class="tool-pill" style="font-size:9px;padding:1px 7px">sympy</span> or implement B-M manually in Python.</li>
+          </ul>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">SINGLE-BYTE XOR — FULL SOLVER</div>
+          <div class="code-block"><span class="keyword">def</span> <span class="func">score</span>(text):
+    freq = <span class="string">"etaoinshrdlu"</span>
+    <span class="keyword">return</span> sum(<span class="num">1</span> <span class="keyword">for</span> c <span class="keyword">in</span> text.lower()
+               <span class="keyword">if</span> c <span class="keyword">in</span> freq)
+
+<span class="keyword">def</span> <span class="func">crack_xor</span>(ciphertext):
+    best = (<span class="num">0</span>, <span class="num">0</span>, <span class="string">b''</span>)
+    <span class="keyword">for</span> key <span class="keyword">in</span> range(<span class="num">256</span>):
+        pt = bytes(b^key <span class="keyword">for</span> b <span class="keyword">in</span> ciphertext)
+        s = score(pt)
+        <span class="keyword">if</span> s > best[<span class="num">0</span>]:
+            best = (s, key, pt)
+    <span class="keyword">return</span> best</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">REPEATING KEY XOR</div>
+          <div class="code-block"><span class="comment"># 1. Find key length: IC or Hamming dist</span>
+<span class="comment"># 2. Split into key_len slices</span>
+<span class="comment"># 3. Solve each slice as single-byte XOR</span>
+<span class="comment"># 4. Combine key bytes</span>
+
+<span class="keyword">def</span> <span class="func">hamming</span>(a, b):
+    <span class="keyword">return</span> sum(bin(x^y).count(<span class="string">'1'</span>)
+               <span class="keyword">for</span> x,y <span class="keyword">in</span> zip(a,b))
+<span class="comment"># Lowest normalized dist = key length</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 08 — ADVANCED ═══════════ -->
+<section class="section" id="s8">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">08</div>
+    <div class="section-num">// MODULE 08</div>
+    <div class="slide-title">ADVANCED <span class="c-m">ATTACKS</span></div>
+    <div class="slide-subtitle"><span class="stag stag-m">HARD</span></div>
+    <div class="cols2">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">ECC VULNERABILITIES</div>
+          <ul class="hack-list">
+            <li><b>Invalid curve</b> — point not on curve, small subgroup</li>
+            <li><b>Nonce reuse (k)</b> — recover private key from 2 sigs with same k</li>
+            <li><b>Weak curve</b> — ECDLP solvable via Pohlig-Hellman</li>
+            <li><b>Smart's attack</b> — ECDLP on anomalous curves</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <div class="panel-title">NONCE REUSE ECDSA</div>
+          <div class="code-block"><span class="comment"># Two sigs with same k:</span>
+<span class="comment"># r1 == r2 → same nonce!</span>
+k = (z1-z2) * pow(s1-s2, -<span class="num">1</span>, n) % n
+d = (s1*k - z1) * pow(r1, -<span class="num">1</span>, n) % n
+<span class="comment"># d = private key 🎉</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">DIFFIE-HELLMAN ATTACKS</div>
+          <table>
+            <tr><th>ATTACK</th><th>CONDITION</th></tr>
+            <tr><td>Baby-step Giant-step</td><td>Small group order</td></tr>
+            <tr><td>Pohlig-Hellman</td><td>Smooth group order</td></tr>
+            <tr><td>Logjam</td><td>512-bit DH, downgrade</td></tr>
+            <tr><td>Small subgroup</td><td>g has small order</td></tr>
+            <tr><td>MOV attack</td><td>Supersingular ECC</td></tr>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="panel-title">LATTICE ATTACKS (COPPERSMITH)</div>
+          <div class="code-block"><span class="comment"># LLL lattice reduction via SageMath</span>
+<span class="keyword">from</span> sage.all <span class="keyword">import</span> *
+
+<span class="comment"># Coppersmith small roots example</span>
+N = <span class="num">...</span>; e = <span class="num">3</span>; c = <span class="num">...</span>
+P = PolynomialRing(Zmod(N), <span class="string">'x'</span>)
+f = (<span class="num">2</span>**<span class="num">512</span> + P.gen())**e - c
+roots = f.small_roots(X=<span class="num">2</span>**<span class="num">64</span>, beta=<span class="num">0.3</span>)</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">MISC ADVANCED TOPICS</div>
+          <div style="line-height:2.2;margin-top:4px">
+            <span class="tool-pill">Bleichenbacher PKCS#1</span>
+            <span class="tool-pill">PKCS7 padding oracle</span>
+            <span class="tool-pill">Fault injection</span>
+            <span class="tool-pill">Timing side-channel</span>
+            <span class="tool-pill">PRNG prediction</span>
+            <span class="tool-pill">MT19937 untwist</span>
+            <span class="tool-pill">CRC manipulation</span>
+          </div>
+        </div>
+        <div class="hbox cyan">
+          <span class="hbox-label">⚡ SAGEMATH TIP</span>
+          SageMath is essential for lattice/ECC challenges. Install it or use SageMathCell online for quick prototyping without local setup.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MODULE 09 — CHEAT SHEET ═══════════ -->
+<section class="section" id="s_cheat">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <div class="bg-num">09</div>
+    <div class="section-num">// MODULE 09</div>
+    <div class="slide-title">DECISION TREE <span class="c-v">CHEAT SHEET</span></div>
+    <div class="slide-subtitle"><span class="stag stag-v">QUICK REFERENCE</span></div>
+    <div class="mindmap">
+      <div class="mcard">
+        <div class="mcard-title">🔡 LOOKS LIKE TEXT?</div>
+        <div class="mcard-body">
+          → Only A-Z? <span>→ Caesar/Atbash/Vigenère</span><br>
+          → Mixed case? <span>→ Substitution cipher</span><br>
+          → Unusual chars? <span>→ Check charset</span><br>
+          → Pigpen/Wingdings? <span>→ Symbol cipher</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">🔢 NUMBERS/HEX?</div>
+        <div class="mcard-body">
+          → 0-25 range? <span>→ Letter numbers</span><br>
+          → Hex pairs? <span>→ Hex decode first</span><br>
+          → Large numbers? <span>→ RSA!</span><br>
+          → 0s and 1s? <span>→ Binary → ASCII</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">📦 BASE ENCODED?</div>
+        <div class="mcard-body">
+          → =, +, / <span>→ Base64</span><br>
+          → Only 0-9 A-F <span>→ Hex</span><br>
+          → %XX <span>→ URL encode</span><br>
+          → Numeric big <span>→ Base85/91?</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">🔑 RSA GIVEN?</div>
+        <div class="mcard-body">
+          → Small n <span>→ factor it</span><br>
+          → e=3, small m <span>→ cube root</span><br>
+          → Multiple n,e <span>→ try attacks</span><br>
+          → <span>Run RsaCtfTool first!</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">🧩 AES GIVEN?</div>
+        <div class="mcard-body">
+          → ECB mode? <span>→ Pattern attack</span><br>
+          → CBC + oracle? <span>→ Padding oracle</span><br>
+          → CTR/OFB nonce? <span>→ Check reuse</span><br>
+          → GCM nonce? <span>→ Forbidden attack</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">🛠 HASH GIVEN?</div>
+        <div class="mcard-body">
+          → 32 hex <span>→ MD5 → crackstation</span><br>
+          → MAC = hash(secret||msg) <span>→ Length ext</span><br>
+          → SHA3/HMAC? <span>→ Not vulnerable</span><br>
+          → Unknown <span>→ hashid tool</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">📡 INTERACT W/ SERVER?</div>
+        <div class="mcard-body">
+          → Decryption oracle <span>→ Padding oracle</span><br>
+          → LSB leak <span>→ Parity oracle</span><br>
+          → Timing diff <span>→ Side-channel</span><br>
+          → Sign oracle <span>→ Forge messages</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">🌊 XOR / STREAM?</div>
+        <div class="mcard-body">
+          → Single byte <span>→ freq analysis</span><br>
+          → Repeating key <span>→ IC test</span><br>
+          → Two ciphertexts <span>→ XOR them</span><br>
+          → LFSR <span>→ Berlekamp-Massey</span>
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcard-title">🔮 NO IDEA?</div>
+        <div class="mcard-body">
+          → <span>CyberChef Magic mode</span><br>
+          → <span>dcode.fr cipher identifier</span><br>
+          → <span>Google: [CTF challenge name]</span><br>
+          → <span>Check file for hidden data!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FINAL ═══════════ -->
+<section class="section" id="s9">
+  <div class="section-inner" style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;min-height:80vh;justify-content:center;text-align:center">
+    <div style="font-size:10px;letter-spacing:6px;color:var(--violet);margin-bottom:24px">ACCESS GRANTED — ALL MODULES COMPLETE</div>
+    <div class="final-big">YOU ARE NOW<br><span>A CRYPTO HACKER</span></div>
+    <p style="font-size:12px;color:var(--muted);letter-spacing:2px;max-width:560px;line-height:2.2;margin:20px auto">
+      Every CTF crypto challenge has a vulnerability. Your job is to find the MISTAKE, not to break real cryptography. Trust the math. Trust the tools.
+    </p>
+    <div class="final-flag">flag{y0u_cracked_th3_c0d3}</div>
+</section>
+
+<script>
+// ── CURSOR ──
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e=>{
+  mx=e.clientX; my=e.clientY;
+  cur.style.left=mx+'px'; cur.style.top=my+'px';
+});
+function animRing(){
+  rx+=(mx-rx)*0.12; ry+=(my-ry)*0.12;
+  ring.style.left=rx+'px'; ring.style.top=ry+'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+// ── CLOCK ──
+function tick(){
+  const n=new Date();
+  document.getElementById('hclock').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setInterval(tick,1000);tick();
+
+// ── SCROLL PROGRESS ──
+window.addEventListener('scroll',()=>{
+  const p=document.getElementById('scroll-progress');
+  const t=document.documentElement.scrollHeight-window.innerHeight;
+  p.style.width=(t>0?window.scrollY/t*100:0)+'%';
+},{passive:true});
+
+// ── BACK TO TOP ──
+const bt=document.getElementById('backTop');
+window.addEventListener('scroll',()=>bt.classList.toggle('show',window.scrollY>500),{passive:true});
+
+// ── SIDE NAV ──
+const secIds=['s0','s1','s2','s3','s4','s5','s6','s7','s8','s_cheat','s9'];
+const secLabels=['HERO','MINDSET','ENCODING','CLASSICAL','RSA','AES','HASH','XOR','ADVANCED','CHEAT SHEET','FINISH'];
+const sn=document.getElementById('sideNav');
+secIds.forEach((id,i)=>{
+  const d=document.createElement('div');
+  d.className='snav-item'+(i===0?' active':'');
+  d.setAttribute('data-label',secLabels[i]);
+  d.onclick=()=>document.getElementById(id).scrollIntoView({behavior:'smooth'});
+  sn.appendChild(d);
+});
+
+// ── INTERSECTION OBSERVERS ──
+const secs=document.querySelectorAll('.section');
+const dots=sn.querySelectorAll('.snav-item');
+const obsV=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:0.07});
+const obsD=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){
+    const idx=Array.from(secs).indexOf(e.target);
+    dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
+  }
+}),{threshold:0.35});
+secs.forEach(s=>{obsV.observe(s);obsD.observe(s)});
+
+// ── FREQ BARS ──
+const freq=[
+  {l:'E',h:72,c:'var(--violet-bright)'},{l:'T',h:56,c:'var(--violet-bright)'},
+  {l:'A',h:52,c:'var(--cyan)'},{l:'O',h:48,c:'var(--cyan)'},{l:'I',h:45,c:'var(--cyan)'},
+  {l:'N',h:42,c:'var(--muted)'},{l:'S',h:36,c:'var(--muted)'},{l:'H',h:30,c:'var(--muted)'},
+  {l:'R',h:26,c:'rgba(82,82,122,0.7)'},{l:'D',h:22,c:'rgba(82,82,122,0.5)'}
+];
+const fb=document.getElementById('freqBars');
+freq.forEach(d=>{
+  const b=document.createElement('div');
+  b.className='fbar';
+  b.innerHTML=`<div class="fbar-fill" style="background:${d.c};height:${d.h}px"></div><span class="fbar-label" style="color:${d.c}">${d.l}</span>`;
+  fb.appendChild(b);
+});
+</script>
+</body>
+</html>

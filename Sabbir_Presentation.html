@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTF Methodology — Rev & Forensics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:       #0b1d35;
+  --navy-mid:   #102646;
+  --navy-light: #1a3a6b;
+  --teal:       #0e9580;
+  --teal-bright:#12b89e;
+  --cyan:       #22d3ee;
+  --mint:       #06d6a0;
+  --amber:      #f59e0b;
+  --rose:       #f43f5e;
+  --white:      #f0f6ff;
+  --gray-1:     #e2eaf5;
+  --gray-2:     #8fa4c0;
+  --gray-3:     #4a6080;
+  --gray-4:     #1e3050;
+  --code-green: #4ade80;
+  --code-blue:  #7dd3fc;
+  --code-pink:  #f9a8d4;
+  --code-bg:    #071422;
+  --card:       #0e2040;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; background: #050d1a; font-family: 'Inter', sans-serif; overflow: hidden; color: var(--white); }
+
+/* ── STAGE ── */
+#stage { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+#viewport { width: 1280px; height: 720px; position: relative; overflow: hidden; transform-origin: center center; }
+
+/* ── SLIDES ── */
+.slide { position: absolute; inset: 0; background: var(--navy); opacity: 0; pointer-events: none; overflow: hidden; display: flex; flex-direction: column; }
+.slide.active { opacity: 1; pointer-events: all; }
+.slide.entering      { animation: sEnter 0.5s cubic-bezier(0.22,1,0.36,1) forwards; }
+.slide.exiting       { animation: sExit  0.4s cubic-bezier(0.55,0,1,0.45) forwards; }
+.slide.entering-back { animation: sEnterB 0.5s cubic-bezier(0.22,1,0.36,1) forwards; }
+.slide.exiting-back  { animation: sExitB  0.4s cubic-bezier(0.55,0,1,0.45) forwards; }
+@keyframes sEnter  { from{opacity:0;transform:translateX(56px)} to{opacity:1;transform:translateX(0)} }
+@keyframes sExit   { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-56px)} }
+@keyframes sEnterB { from{opacity:0;transform:translateX(-56px)} to{opacity:1;transform:translateX(0)} }
+@keyframes sExitB  { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(56px)} }
+
+/* ── GRID BG ── */
+.grid-bg { position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(34,211,238,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,0.035) 1px,transparent 1px);background-size:40px 40px; }
+
+/* ── GLOW SPOTS ── */
+.glow-tr { position:absolute;top:-140px;right:-140px;width:420px;height:420px;background:radial-gradient(circle,rgba(14,149,128,0.16) 0%,transparent 70%);pointer-events:none; }
+.glow-bl { position:absolute;bottom:-120px;left:-120px;width:380px;height:380px;background:radial-gradient(circle,rgba(34,211,238,0.1) 0%,transparent 70%);pointer-events:none; }
+
+/* ── HEADER ── */
+.slide-header { display:flex;align-items:center;padding:0 52px;height:66px;flex-shrink:0;border-bottom:1px solid rgba(34,211,238,0.1);position:relative;z-index:2; }
+.hdr-bar { width:4px;height:26px;border-radius:2px;margin-right:14px;flex-shrink:0; }
+.slide-header h2 { font-family:'Syne',sans-serif;font-size:16.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--white); }
+.hdr-sub { font-family:'Space Mono',monospace;font-size:10px;color:var(--gray-3);margin-left:auto;letter-spacing:0.06em; }
+
+/* ── BODY ── */
+.slide-body { flex:1;padding:36px 52px;position:relative;z-index:2;overflow:hidden; }
+
+/* ── TAGS ── */
+.tag { display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-family:'Space Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase; }
+.tag-cyan  { background:rgba(34,211,238,0.1);color:var(--cyan);border:1px solid rgba(34,211,238,0.28); }
+.tag-mint  { background:rgba(6,214,160,0.1);color:var(--mint);border:1px solid rgba(6,214,160,0.28); }
+.tag-amber { background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.3); }
+
+/* ── CODE BLOCK ── */
+.code-block { background:var(--code-bg);border:1px solid rgba(34,211,238,0.12);border-left:3px solid var(--teal);border-radius:6px;padding:14px 18px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.75;color:var(--gray-1); }
+.c-comment { color:var(--gray-3); }
+.c-cmd     { color:var(--code-green); }
+.c-out     { color:var(--code-blue); }
+.c-kw      { color:#a78bfa; }
+.c-str     { color:var(--amber); }
+.c-flag    { color:var(--code-green);font-weight:700;font-size:12px; }
+
+/* ── CALLOUT ── */
+.callout { border-left:3px solid var(--teal);background:rgba(14,149,128,0.07);border-radius:0 6px 6px 0;padding:12px 16px;font-size:12.5px;color:var(--gray-1);line-height:1.6; }
+.callout strong { color:var(--teal-bright);font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;display:block;margin-bottom:5px;font-family:'Space Mono',monospace; }
+.callout-amber { border-color:var(--amber);background:rgba(245,158,11,0.06); }
+.callout-amber strong { color:var(--amber); }
+
+/* ── BULLET LIST ── */
+.blist { list-style:none; }
+.blist li { padding:6px 0 6px 20px;position:relative;font-size:12.5px;color:var(--gray-1);line-height:1.5;border-bottom:1px solid rgba(255,255,255,0.04); }
+.blist li:last-child { border-bottom:none; }
+.blist li::before { content:'▸';position:absolute;left:0;color:var(--teal);font-size:10px;top:8px; }
+.blist li strong { color:var(--white); }
+
+/* ── FLAG BOX ── */
+.flag-box { background:linear-gradient(135deg,#071422,#0b2040);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:16px 24px;text-align:center; }
+.flag-box .fl-label { font-family:'Space Mono',monospace;font-size:9.5px;color:var(--gray-3);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px; }
+.flag-box .fl-text  { font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--code-green);text-shadow:0 0 18px rgba(74,222,128,0.4); }
+
+/* ── STAGGER REVEALS ── */
+.rv { opacity:0;transform:translateY(12px); }
+.slide.active .rv { animation:rvUp 0.48s cubic-bezier(0.22,1,0.36,1) forwards; }
+.slide.active .rv:nth-child(1)  { animation-delay:0.04s; }
+.slide.active .rv:nth-child(2)  { animation-delay:0.10s; }
+.slide.active .rv:nth-child(3)  { animation-delay:0.16s; }
+.slide.active .rv:nth-child(4)  { animation-delay:0.22s; }
+.slide.active .rv:nth-child(5)  { animation-delay:0.28s; }
+.slide.active .rv:nth-child(6)  { animation-delay:0.34s; }
+.slide.active .rv:nth-child(7)  { animation-delay:0.40s; }
+.slide.active .rv:nth-child(8)  { animation-delay:0.46s; }
+.slide.active .rv:nth-child(9)  { animation-delay:0.52s; }
+@keyframes rvUp { to{opacity:1;transform:translateY(0)} }
+
+/* ── CONTROLS ── */
+#controls { position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:18px;background:rgba(11,29,53,0.9);border:1px solid rgba(34,211,238,0.18);border-radius:50px;padding:9px 20px;z-index:500;backdrop-filter:blur(10px); }
+.cbtn { width:36px;height:36px;border-radius:50%;border:1px solid rgba(34,211,238,0.25);background:transparent;color:var(--cyan);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.18s; }
+.cbtn:hover { background:rgba(34,211,238,0.12);border-color:var(--cyan); }
+.cbtn:active { transform:scale(0.9); }
+#scounter { font-family:'Space Mono',monospace;font-size:11px;color:var(--gray-2);min-width:56px;text-align:center; }
+#prog { position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--cyan));transition:width 0.38s ease;z-index:500; }
+#snbadge { position:fixed;top:18px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:var(--gray-3);z-index:500;letter-spacing:0.1em; }
+#keyhint { position:fixed;top:18px;right:18px;font-family:'Space Mono',monospace;font-size:9.5px;color:var(--gray-3);z-index:500;display:flex;gap:8px;align-items:center; }
+.kbd { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:3px;padding:2px 6px;font-size:10px; }
+
+/* ══════════════════════════════════════════════
+   SLIDE 1 — TITLE
+══════════════════════════════════════════════ */
+#s1 { flex-direction:row; }
+#s1 .left { width:570px;flex-shrink:0;padding:68px 60px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2; }
+#s1 .right { flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(135deg,#0e4d40 0%,#0b3060 100%); }
+#s1 .right::before { content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(14,149,128,0.28),rgba(34,211,238,0.08)); }
+.eyebrow { font-family:'Space Mono',monospace;font-size:10.5px;color:var(--teal-bright);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:10px; }
+.eyebrow::before { content:'';width:28px;height:1px;background:var(--teal); }
+#s1 h1 { font-family:'Syne',sans-serif;font-size:62px;font-weight:800;line-height:1.0;color:var(--white);margin-bottom:6px; }
+#s1 h1 .acc { color:var(--cyan); }
+#s1 .subtitle { font-family:'Inter',sans-serif;font-size:14.5px;color:var(--gray-2);margin-bottom:30px;font-weight:300;line-height:1.5; }
+#s1 .ctags { display:flex;gap:9px;margin-bottom:44px; }
+#s1 .meta { font-family:'Space Mono',monospace;font-size:9.5px;color:var(--gray-3);letter-spacing:0.09em;line-height:2; }
+.scanline { position:absolute;left:0;right:0;height:56px;background:linear-gradient(transparent,rgba(34,211,238,0.05),transparent);pointer-events:none;animation:scan 5s linear infinite; }
+@keyframes scan { 0%{top:0;opacity:0.15} 100%{top:100%;opacity:0} }
+.circuit svg { position:absolute;inset:0;width:100%;height:100%;opacity:0.15; }
+.term-win { width:430px;background:var(--code-bg);border:1px solid rgba(34,211,238,0.18);border-radius:10px;overflow:hidden;position:relative;z-index:2;box-shadow:0 28px 56px rgba(0,0,0,0.55); }
+.term-bar { background:#0a1f38;padding:10px 14px;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(34,211,238,0.08); }
+.dot { width:11px;height:11px;border-radius:50%; }
+.dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
+.term-bar span { font-family:'Space Mono',monospace;font-size:10px;color:var(--gray-3);margin-left:8px; }
+.term-body { padding:18px 20px;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.85; }
+.t-ln { display:block; }
+.tp{color:var(--teal)}.tc{color:var(--code-green)}.to{color:var(--code-blue);padding-left:3px}.tf{color:var(--code-green);font-weight:700;font-size:13px}
+.blink { display:inline-block;width:7px;height:13px;background:var(--teal);vertical-align:middle;animation:bl 1s step-end infinite; }
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ══════════════════════════════════════════════
+   SLIDE 2 — WHAT IS A CTF
+══════════════════════════════════════════════ */
+#s2 .def-box { background:linear-gradient(90deg,rgba(14,149,128,0.1),rgba(34,211,238,0.05));border:1px solid rgba(14,149,128,0.28);border-left:4px solid var(--teal);border-radius:0 8px 8px 0;padding:16px 22px;margin-bottom:24px;font-size:13.5px;color:var(--gray-1);line-height:1.65; }
+#s2 .def-box code { color:var(--teal-bright);font-family:'Space Mono',monospace; }
+#s2 .fmts { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px; }
+#s2 .fc { background:rgba(14,38,64,0.7);border-radius:8px;overflow:hidden;border:1px solid rgba(34,211,238,0.08); }
+#s2 .fc-h { padding:11px 15px;display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700; }
+#s2 .fc-ico { width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0; }
+#s2 .fc-b { padding:0 15px 12px;font-size:11.5px;color:var(--gray-2);line-height:1.55; }
+.fcj .fc-h{background:rgba(34,211,238,0.08);color:var(--cyan)}.fcj .fc-ico{background:rgba(34,211,238,0.16)}
+.fca .fc-h{background:rgba(244,63,94,0.08);color:var(--rose)}.fca .fc-ico{background:rgba(244,63,94,0.16)}
+.fcb .fc-h{background:rgba(245,158,11,0.08);color:var(--amber)}.fcb .fc-ico{background:rgba(245,158,11,0.16)}
+#s2 .stats { display:grid;grid-template-columns:repeat(4,1fr);gap:10px; }
+#s2 .stat { background:rgba(14,149,128,0.07);border:1px solid rgba(14,149,128,0.18);border-radius:6px;padding:12px;text-align:center; }
+#s2 .stat-n { font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--teal-bright);line-height:1;margin-bottom:4px; }
+#s2 .stat-l { font-size:10.5px;color:var(--gray-2);line-height:1.4; }
+
+/* ══════════════════════════════════════════════
+   SLIDE 3 — CATEGORIES
+══════════════════════════════════════════════ */
+#s3 .cats { display:grid;grid-template-columns:1fr 1fr;gap:18px;height:100%; }
+#s3 .cat { border-radius:10px;overflow:hidden;display:flex;flex-direction:column;position:relative; }
+#s3 .cat-rev  { background:linear-gradient(155deg,rgba(34,211,238,0.04),rgba(11,29,53,0.8));border:1px solid rgba(34,211,238,0.2); }
+#s3 .cat-dfir { background:linear-gradient(155deg,rgba(6,214,160,0.04),rgba(11,29,53,0.8));border:1px solid rgba(6,214,160,0.2); }
+#s3 .cat-h { padding:18px 22px 14px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:13px; }
+#s3 .cat-ico { width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0; }
+#s3 .cat-rev  .cat-ico { background:rgba(34,211,238,0.13); }
+#s3 .cat-dfir .cat-ico { background:rgba(6,214,160,0.13); }
+#s3 .cat-title { font-family:'Syne',sans-serif;font-size:17px;font-weight:800; }
+#s3 .cat-rev  .cat-title { color:var(--cyan); }
+#s3 .cat-dfir .cat-title { color:var(--mint); }
+#s3 .cat-abbr { font-family:'Space Mono',monospace;font-size:9.5px;color:var(--gray-3);letter-spacing:0.09em; }
+#s3 .cat-pts { padding:14px 22px;flex:1; }
+#s3 .cat-pt { display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12.5px;color:var(--gray-1);line-height:1.45; }
+#s3 .cat-pt:last-child{border-bottom:none}
+#s3 .cdot-r{color:var(--cyan);font-size:10px;margin-top:2px;flex-shrink:0}
+#s3 .cdot-d{color:var(--mint);font-size:10px;margin-top:2px;flex-shrink:0}
+#s3 .cat-foot { padding:11px 22px;background:rgba(0,0,0,0.2);font-family:'Space Mono',monospace;font-size:9.5px;color:var(--gray-3);letter-spacing:0.05em; }
+
+/* ══════════════════════════════════════════════
+   SLIDE 4 — REV METHODOLOGY
+══════════════════════════════════════════════ */
+#s4 .phases { display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px; }
+#s4 .ph { background:rgba(11,29,53,0.7);border:1px solid rgba(34,211,238,0.09);border-radius:8px;overflow:hidden;transition:border-color 0.2s; }
+#s4 .ph:hover{border-color:rgba(34,211,238,0.3)}
+#s4 .ph-h { padding:14px 15px 10px;border-bottom:1px solid rgba(255,255,255,0.05); }
+#s4 .ph-n { font-family:'Syne',sans-serif;font-size:27px;font-weight:800;line-height:1;margin-bottom:3px; }
+#s4 .ph:nth-child(1) .ph-n{color:var(--cyan)}
+#s4 .ph:nth-child(2) .ph-n{color:var(--teal-bright)}
+#s4 .ph:nth-child(3) .ph-n{color:#a78bfa}
+#s4 .ph:nth-child(4) .ph-n{color:var(--amber)}
+#s4 .ph-t { font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--white); }
+#s4 .ph-b { padding:11px 15px; }
+#s4 .phi { font-family:'Space Mono',monospace;font-size:10.5px;color:var(--gray-2);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);line-height:1.4; }
+#s4 .phi:last-child{border-bottom:none}
+#s4 .phi-c{color:var(--code-green)}
+#s4 .phi-n{color:var(--gray-3);font-size:9.5px}
+#s4 .tip { background:rgba(14,149,128,0.07);border:1px solid rgba(14,149,128,0.18);border-radius:6px;padding:11px 16px;display:flex;align-items:center;gap:11px;font-size:12.5px;color:var(--gray-1); }
+#s4 .tip span{color:var(--teal-bright);font-weight:600}
+
+/* ══════════════════════════════════════════════
+   SLIDE 5 — REV TOOLS
+══════════════════════════════════════════════ */
+#s5 .tgrid { display:grid;grid-template-columns:repeat(4,1fr);gap:11px; }
+#s5 .tc { background:rgba(11,29,53,0.6);border:1px solid rgba(34,211,238,0.07);border-radius:8px;padding:14px 15px;transition:all 0.2s;position:relative;overflow:hidden; }
+#s5 .tc::before { content:'';position:absolute;top:0;left:0;right:0;height:2px; }
+#s5 .tc-cy::before{background:var(--cyan);opacity:1}
+#s5 .tc-tl::before{background:var(--teal-bright);opacity:1}
+#s5 .tc-pu::before{background:#a78bfa;opacity:1}
+#s5 .tc-am::before{background:var(--amber);opacity:1}
+#s5 .tc-mt::before{background:var(--mint);opacity:1}
+#s5 .tc:hover{border-color:rgba(34,211,238,0.22);transform:translateY(-2px)}
+#s5 .t-name{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;margin-bottom:3px}
+#s5 .tc-cy .t-name{color:var(--cyan)}
+#s5 .tc-tl .t-name{color:var(--teal-bright)}
+#s5 .tc-pu .t-name{color:#a78bfa}
+#s5 .tc-am .t-name{color:var(--amber)}
+#s5 .tc-mt .t-name{color:var(--mint)}
+#s5 .t-cat{font-family:'Space Mono',monospace;font-size:9px;color:var(--gray-3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px}
+#s5 .t-desc{font-size:11px;color:var(--gray-2);line-height:1.5}
+
+/* ══════════════════════════════════════════════
+   SLIDE 6 — REV EXAMPLE
+══════════════════════════════════════════════ */
+#s6 .ex-grid { display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:13px;height:calc(100% - 4px); }
+#s6 .ex { background:var(--code-bg);border:1px solid rgba(34,211,238,0.1);border-radius:8px;overflow:hidden;display:flex;flex-direction:column; }
+#s6 .ex-h { padding:9px 15px;border-bottom:1px solid rgba(34,211,238,0.08);display:flex;align-items:center;gap:9px;flex-shrink:0; }
+#s6 .ex-n { width:23px;height:23px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0; }
+#s6 .ex:nth-child(1) .ex-n{background:rgba(34,211,238,0.18);color:var(--cyan)}
+#s6 .ex:nth-child(2) .ex-n{background:rgba(14,149,128,0.18);color:var(--teal-bright)}
+#s6 .ex:nth-child(3) .ex-n{background:rgba(167,139,250,0.18);color:#a78bfa}
+#s6 .ex:nth-child(4) .ex-n{background:rgba(74,222,128,0.18);color:var(--code-green)}
+#s6 .ex-title{font-family:'Syne',sans-serif;font-size:12.5px;font-weight:700;color:var(--white)}
+#s6 .ex-b{padding:11px 15px;font-family:'Space Mono',monospace;font-size:10.5px;line-height:1.75;flex:1}
+
+/* ══════════════════════════════════════════════
+   SLIDE 7 — DFIR ARTEFACTS
+══════════════════════════════════════════════ */
+#s7 .artgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}
+#s7 .art{background:rgba(11,29,53,0.6);border-radius:8px;overflow:hidden}
+#s7 .art-pcap   {border:1px solid rgba(6,214,160,0.22)}
+#s7 .art-disk   {border:1px solid rgba(34,211,238,0.22)}
+#s7 .art-mem    {border:1px solid rgba(245,158,11,0.22)}
+#s7 .art-steg   {border:1px solid rgba(244,63,94,0.22)}
+#s7 .art-log    {border:1px solid rgba(167,139,250,0.22)}
+#s7 .art-pcap .art-hd{background:rgba(6,214,160,0.09)}
+#s7 .art-disk .art-hd{background:rgba(34,211,238,0.09)}
+#s7 .art-mem  .art-hd{background:rgba(245,158,11,0.09)}
+#s7 .art-steg .art-hd{background:rgba(244,63,94,0.09)}
+#s7 .art-log  .art-hd{background:rgba(167,139,250,0.09)}
+#s7 .art-hd{padding:11px;text-align:center}
+#s7 .art-icon{font-size:23px;margin-bottom:5px}
+#s7 .art-name{font-family:'Syne',sans-serif;font-size:11.5px;font-weight:700;color:var(--white)}
+#s7 .art-bd{padding:0 11px 11px}
+#s7 .art-ext{font-family:'Space Mono',monospace;font-size:8.5px;color:var(--gray-3);margin-bottom:6px;word-break:break-all}
+#s7 .art-tools{font-size:10px;color:var(--gray-2);line-height:1.45;margin-bottom:6px}
+#s7 .art-q{font-size:10px;color:var(--teal-bright);font-style:italic;line-height:1.4}
+#s7 .triage-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+#s7 .tr-step{background:rgba(14,149,128,0.07);border:1px solid rgba(14,149,128,0.18);border-radius:6px;padding:9px 12px;display:flex;align-items:flex-start;gap:9px}
+#s7 .tr-n{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--teal-bright);line-height:1;flex-shrink:0}
+#s7 .tr-t{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--gray-2);line-height:1.5}
+
+/* ══════════════════════════════════════════════
+   SLIDE 8 — NETWORK FORENSICS
+══════════════════════════════════════════════ */
+#s8 .net-grid{display:grid;grid-template-columns:1fr 1.35fr;gap:18px;height:100%}
+#s8 .wf-col{display:flex;flex-direction:column;gap:7px}
+#s8 .wf{background:rgba(11,29,53,0.7);border:1px solid rgba(6,214,160,0.1);border-radius:6px;padding:11px 13px;display:flex;align-items:flex-start;gap:11px}
+#s8 .wf-n{width:23px;height:23px;background:rgba(6,214,160,0.18);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;color:var(--mint);flex-shrink:0;margin-top:1px}
+#s8 .wf-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--white);margin-bottom:2px}
+#s8 .wf-desc{font-size:11px;color:var(--gray-2);line-height:1.4;margin-bottom:3px}
+#s8 .wf-cmd{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--code-green)}
+#s8 .code-pan{background:var(--code-bg);border:1px solid rgba(6,214,160,0.14);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+#s8 .cp-h{padding:9px 15px;background:rgba(6,214,160,0.07);border-bottom:1px solid rgba(6,214,160,0.1);font-family:'Space Mono',monospace;font-size:10.5px;color:var(--mint);display:flex;align-items:center;gap:7px;flex-shrink:0}
+#s8 .cp-b{padding:15px;font-family:'Space Mono',monospace;font-size:10.5px;line-height:1.8;flex:1}
+
+/* ══════════════════════════════════════════════
+   SLIDE 9 — DISK / MEMORY / STEGO
+══════════════════════════════════════════════ */
+#s9 .tri{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;height:100%}
+#s9 .col{background:var(--code-bg);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+#s9 .col-disk{border:1px solid rgba(34,211,238,0.18)}
+#s9 .col-mem {border:1px solid rgba(245,158,11,0.18)}
+#s9 .col-steg{border:1px solid rgba(244,63,94,0.18)}
+#s9 .col-h{padding:13px 17px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:9px}
+#s9 .col-disk .col-h{background:rgba(34,211,238,0.07)}
+#s9 .col-mem  .col-h{background:rgba(245,158,11,0.07)}
+#s9 .col-steg .col-h{background:rgba(244,63,94,0.07)}
+#s9 .col-ico{font-size:19px}
+#s9 .col-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+#s9 .col-disk .col-title{color:var(--cyan)}
+#s9 .col-mem  .col-title{color:var(--amber)}
+#s9 .col-steg .col-title{color:var(--rose)}
+#s9 .col-b{padding:13px 17px;font-family:'Space Mono',monospace;font-size:10.5px;line-height:1.8;flex:1}
+
+/* ══════════════════════════════════════════════
+   SLIDE 10 — DFIR EXAMPLE
+══════════════════════════════════════════════ */
+#s10 .ex-layout{display:grid;grid-template-columns:1fr 1.05fr;gap:18px;height:calc(100% - 64px);margin-top:14px}
+#s10 .steps{display:flex;flex-direction:column;gap:9px}
+#s10 .ist{background:rgba(11,29,53,0.8);border:1px solid rgba(6,214,160,0.1);border-radius:7px;padding:11px 14px;display:flex;gap:11px;align-items:flex-start}
+#s10 .ist-n{width:26px;height:26px;border-radius:6px;background:rgba(6,214,160,0.18);color:var(--mint);font-family:'Space Mono',monospace;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#s10 .ist-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px}
+#s10 .ist-text{font-size:11px;color:var(--gray-2);line-height:1.45;margin-bottom:4px}
+#s10 .ist-cmd{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--code-green);line-height:1.65}
+#s10 .rcol{display:flex;flex-direction:column;gap:13px}
+
+/* ══════════════════════════════════════════════
+   SLIDE 11 — MINDSET
+══════════════════════════════════════════════ */
+#s11 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:13px;height:100%}
+#s11 .pc{background:rgba(11,29,53,0.6);border-radius:8px;padding:17px 19px;border:1px solid rgba(255,255,255,0.05);position:relative;overflow:hidden;transition:all 0.2s}
+#s11 .pc:hover{border-color:rgba(34,211,238,0.22);transform:translateY(-2px)}
+#s11 .pc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+#s11 .pc1::before{background:var(--cyan)}
+#s11 .pc2::before{background:var(--mint)}
+#s11 .pc3::before{background:var(--amber)}
+#s11 .pc4::before{background:var(--cyan)}
+#s11 .pc5::before{background:var(--mint)}
+#s11 .pc6::before{background:var(--amber)}
+#s11 .p-ico{font-size:21px;margin-bottom:9px;display:block}
+#s11 .p-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--white);margin-bottom:7px}
+#s11 .p-desc{font-size:11.5px;color:var(--gray-2);line-height:1.55}
+
+/* ══════════════════════════════════════════════
+   SLIDE 12 — MISTAKES
+══════════════════════════════════════════════ */
+#s12 .mlist{display:flex;flex-direction:column;gap:9px;padding-top:4px}
+#s12 .mrow{display:grid;grid-template-columns:1fr 38px 1fr;align-items:center}
+#s12 .wrong{background:rgba(244,63,94,0.06);border:1px solid rgba(244,63,94,0.18);border-radius:6px 0 0 6px;padding:10px 14px;display:flex;align-items:center;gap:9px;font-size:12px;color:#fca5a5;line-height:1.4}
+#s12 .wx{color:var(--rose);font-size:15px;font-weight:700;flex-shrink:0}
+#s12 .arr{display:flex;align-items:center;justify-content:center;color:var(--gray-3);font-size:17px;background:rgba(255,255,255,0.02);height:100%}
+#s12 .right{background:rgba(6,214,160,0.05);border:1px solid rgba(6,214,160,0.18);border-radius:0 6px 6px 0;padding:10px 14px;display:flex;align-items:center;gap:9px;font-size:12px;color:#a7f3d0;line-height:1.4}
+#s12 .rck{color:var(--mint);font-size:15px;font-weight:700;flex-shrink:0}
+#s12 code{color:var(--mint);font-family:'Space Mono',monospace;font-size:10.5px}
+
+/* ══════════════════════════════════════════════
+   SLIDE 13 — RESOURCES
+══════════════════════════════════════════════ */
+#s13 .rgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:13px;height:100%}
+#s13 .rc{background:rgba(11,29,53,0.6);border:1px solid rgba(34,211,238,0.07);border-radius:8px;padding:17px 19px;display:flex;flex-direction:column;transition:all 0.2s}
+#s13 .rc:hover{border-color:rgba(34,211,238,0.22);transform:translateY(-2px)}
+#s13 .rc-h{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+#s13 .rc-ico{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+#s13 .rc-name{font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;color:var(--white)}
+#s13 .rc-cat{font-family:'Space Mono',monospace;font-size:8.5px;color:var(--gray-3);letter-spacing:0.07em;text-transform:uppercase}
+#s13 .rc-desc{font-size:11.5px;color:var(--gray-2);line-height:1.55;flex:1}
+#s13 .rc-url{font-family:'Space Mono',monospace;font-size:9.5px;margin-top:9px}
+
+/* ══════════════════════════════════════════════
+   SLIDE 14 — CONCLUSION
+══════════════════════════════════════════════ */
+#s14 .conc{display:flex;flex-direction:column;gap:16px;height:100%}
+#s14 .sum{background:linear-gradient(90deg,rgba(14,149,128,0.1),rgba(34,211,238,0.05));border:1px solid rgba(14,149,128,0.26);border-left:4px solid var(--teal);border-radius:0 8px 8px 0;padding:16px 22px;font-size:13.5px;color:var(--gray-1);line-height:1.65;font-style:italic}
+#s14 .trow{display:grid;grid-template-columns:1fr 1fr;gap:15px;flex:1}
+#s14 .tk{border-radius:8px;padding:18px 20px;display:flex;flex-direction:column}
+#s14 .tk-rev{background:linear-gradient(135deg,rgba(34,211,238,0.05),rgba(11,29,53,0.5));border:1px solid rgba(34,211,238,0.18)}
+#s14 .tk-dfir{background:linear-gradient(135deg,rgba(6,214,160,0.05),rgba(11,29,53,0.5));border:1px solid rgba(6,214,160,0.18)}
+#s14 .tk-h{display:flex;align-items:center;gap:11px;margin-bottom:13px;padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,0.06)}
+#s14 .tk-ico{font-size:19px}
+#s14 .tk-title{font-family:'Syne',sans-serif;font-size:14.5px;font-weight:800}
+#s14 .tk-rev  .tk-title{color:var(--cyan)}
+#s14 .tk-dfir .tk-title{color:var(--mint)}
+#s14 .tk-pts{flex:1;display:flex;flex-direction:column;gap:5px}
+#s14 .tkp{font-size:12px;color:var(--gray-1);display:flex;align-items:flex-start;gap:7px;line-height:1.4}
+#s14 .tk-rev  .tkdot{color:var(--cyan);font-size:9px;margin-top:3px;flex-shrink:0}
+#s14 .tk-dfir .tkdot{color:var(--mint);font-size:9px;margin-top:3px;flex-shrink:0}
+#s14 .qbar{text-align:center;font-family:'Space Mono',monospace;font-size:10.5px;color:var(--gray-3);font-style:italic;padding-top:4px}
+
+/* ══════════════════════════════════════════════
+   SLIDE 15 — Q&A
+══════════════════════════════════════════════ */
+#s15{align-items:center;justify-content:center}
+#s15 .tbg{position:absolute;inset:0;font-family:'Space Mono',monospace;font-size:10.5px;color:rgba(34,211,238,0.04);padding:28px;overflow:hidden;line-height:1.8;pointer-events:none}
+#s15 .qa-wrap{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px}
+#s15 .flag-disp{background:rgba(7,20,34,0.96);border:1px solid rgba(74,222,128,0.38);border-radius:10px;padding:22px 48px;text-align:center;box-shadow:0 0 50px rgba(74,222,128,0.1),0 20px 40px rgba(0,0,0,0.5)}
+#s15 .fd-label{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--gray-3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:9px}
+#s15 .fd-text{font-family:'Space Mono',monospace;font-size:21px;font-weight:700;color:var(--code-green);text-shadow:0 0 20px rgba(74,222,128,0.4)}
+#s15 .qa-title{font-family:'Syne',sans-serif;font-size:50px;font-weight:800;color:var(--white);letter-spacing:0.04em;text-align:center}
+#s15 .qa-cats{display:flex;gap:14px;align-items:center}
+#s15 .qa-div{color:var(--gray-4);font-size:18px}
+#s15 .qa-cat{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.04em}
+#s15 .qa-info{font-family:'Space Mono',monospace;font-size:10px;color:var(--gray-3);text-align:center;letter-spacing:0.06em}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div id="snbadge">01 / 15</div>
+<div id="keyhint"><span class="kbd">←</span><span class="kbd">→</span> navigate &nbsp;<span class="kbd">F</span> fullscreen</div>
+
+<div id="stage">
+  <div id="viewport">
+
+    <!-- ══ SLIDE 1 — TITLE ══ -->
+    <section class="slide active" id="s1">
+      <div class="grid-bg"></div>
+      <div class="scanline"></div>
+      <div class="left">
+        <div class="eyebrow rv">University Cybersecurity · 2025–2026</div>
+        <h1 class="rv">CAPTURE<br><span class="acc">THE FLAG</span></h1>
+        <p class="subtitle rv">A practical methodology for<br>competitive CTF challenges</p>
+        <div class="ctags rv">
+          <span class="tag tag-cyan">⚙ Reverse Engineering</span>
+          <span class="tag tag-mint">🔍 Digital Forensics</span>
+        </div>
+        <div class="meta rv">CTF METHODOLOGY GUIDE<br>REV · DFIR<br>ACADEMIC YEAR 2025–2026</div>
+      </div>
+      <div class="right">
+        <div class="circuit">
+          <svg viewBox="0 0 700 720" preserveAspectRatio="xMidYMid slice">
+            <g stroke="rgba(34,211,238,0.7)" stroke-width="1" fill="none">
+              <polyline points="50,0 50,180 200,180 200,320 420,320"/>
+              <polyline points="0,420 160,420 160,260 360,260 360,520 620,520"/>
+              <polyline points="310,0 310,110 520,110 520,620 700,620"/>
+              <polyline points="0,610 90,610 90,460 260,460 260,360"/>
+              <circle cx="50" cy="180" r="4" fill="rgba(34,211,238,0.7)"/>
+              <circle cx="200" cy="320" r="4" fill="rgba(34,211,238,0.7)"/>
+              <circle cx="160" cy="420" r="4" fill="rgba(34,211,238,0.7)"/>
+              <circle cx="360" cy="260" r="4" fill="rgba(34,211,238,0.7)"/>
+              <circle cx="520" cy="520" r="4" fill="rgba(34,211,238,0.7)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="term-win rv">
+          <div class="term-bar">
+            <div class="dot dr"></div><div class="dot dy"></div><div class="dot dg"></div>
+            <span>ctf_session — bash</span>
+          </div>
+          <div class="term-body">
+            <span class="t-ln"><span class="tp">ctf@kali:~$</span> <span class="tc">file ./challenge</span></span>
+            <span class="t-ln to">ELF 64-bit LSB executable, x86-64</span>
+            <span class="t-ln"> </span>
+            <span class="t-ln"><span class="tp">ctf@kali:~$</span> <span class="tc">strings | grep -i flag</span></span>
+            <span class="t-ln to">Access Granted! Flag: %s</span>
+            <span class="t-ln"> </span>
+            <span class="t-ln"><span class="tp">ctf@kali:~$</span> <span class="tc">python3 solve.py</span></span>
+            <span class="t-ln to">[+] Key decoded: epicctf1</span>
+            <span class="t-ln tf">[*] flag{x0r_15_n0t_3ncrypt10n_l0l}</span>
+            <span class="t-ln"> </span>
+            <span class="t-ln"><span class="tp">ctf@kali:~$</span> <span class="blink"></span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 2 — WHAT IS A CTF ══ -->
+    <section class="slide" id="s2">
+      <div class="grid-bg"></div><div class="glow-tr"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--cyan)"></div>
+        <h2>What Is a Capture The Flag Competition?</h2>
+        <span class="hdr-sub">Introduction</span>
+      </div>
+      <div class="slide-body">
+        <div class="def-box rv">A <strong>Capture The Flag (CTF)</strong> competition is a cybersecurity event where participants solve security challenges to discover hidden strings called <code>flag{...}</code> — submitted to a scoring platform for points. CTFs bridge the gap between academic theory and real-world offensive security skills, and are held globally by universities and professional organisations.</div>
+        <div class="fmts rv">
+          <div class="fc fcj"><div class="fc-h"><div class="fc-ico">📋</div>Jeopardy-Style</div><div class="fc-b">Category board with point values. Teams choose freely which challenges to attempt. Most common for online competitions worldwide.</div></div>
+          <div class="fc fca"><div class="fc-h"><div class="fc-ico">⚔️</div>Attack–Defense</div><div class="fc-b">Teams defend their own service while simultaneously exploiting identical services run by opponents. Closest to real-world scenarios.</div></div>
+          <div class="fc fcb"><div class="fc-h"><div class="fc-ico">🔓</div>Boot2Root / HTB</div><div class="fc-b">Compromise a target machine from zero access to root, collecting flags along the privilege escalation path.</div></div>
+        </div>
+        <div class="stats rv">
+          <div class="stat"><div class="stat-n">50+</div><div class="stat-l">Major CTF events per year globally</div></div>
+          <div class="stat"><div class="stat-n">10k+</div><div class="stat-l">Teams competing in top events</div></div>
+          <div class="stat"><div class="stat-n">6</div><div class="stat-l">Core skill categories tested</div></div>
+          <div class="stat"><div class="stat-n">2</div><div class="stat-l">Categories in this guide: Rev + DFIR</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 3 — CATEGORIES ══ -->
+    <section class="slide" id="s3">
+      <div class="grid-bg"></div><div class="glow-bl"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:linear-gradient(180deg,var(--cyan),var(--mint))"></div>
+        <h2>The Two Categories</h2>
+        <span class="hdr-sub">REV · DFIR</span>
+      </div>
+      <div class="slide-body">
+        <div class="cats">
+          <div class="cat cat-rev rv">
+            <div class="cat-h"><div class="cat-ico">⚙️</div><div><div class="cat-title">Reverse Engineering</div><div class="cat-abbr">REV · CATEGORY</div></div></div>
+            <div class="cat-pts">
+              <div class="cat-pt"><span class="cdot-r">▸</span>Analyse compiled binaries <strong>without source code</strong></div>
+              <div class="cat-pt"><span class="cdot-r">▸</span>Understand hidden <strong>validation logic</strong> and custom algorithms</div>
+              <div class="cat-pt"><span class="cdot-r">▸</span>Reconstruct <strong>encryption and encoding schemes</strong> to recover flags</div>
+              <div class="cat-pt"><span class="cdot-r">▸</span>Work backwards from <strong>success condition</strong> to required input</div>
+              <div class="cat-pt"><span class="cdot-r">▸</span>Use symbolic execution for <strong>constraint-based checks</strong></div>
+            </div>
+            <div class="cat-foot">Tools: Ghidra · IDA Pro · GDB+GEF · angr · Z3 · radare2 · binwalk</div>
+          </div>
+          <div class="cat cat-dfir rv">
+            <div class="cat-h"><div class="cat-ico">🔍</div><div><div class="cat-title" style="color:var(--mint)">Digital Forensics</div><div class="cat-abbr">DFIR · CATEGORY</div></div></div>
+            <div class="cat-pts">
+              <div class="cat-pt"><span class="cdot-d">▸</span>Analyse <strong>PCAPs, disk images, memory dumps</strong></div>
+              <div class="cat-pt"><span class="cdot-d">▸</span>Recover <strong>deleted files</strong> and hidden artefacts from raw data</div>
+              <div class="cat-pt"><span class="cdot-d">▸</span>Reconstruct <strong>adversarial activity</strong> and investigation timelines</div>
+              <div class="cat-pt"><span class="cdot-d">▸</span>Extract <strong>steganographic data</strong> from images and audio files</div>
+              <div class="cat-pt"><span class="cdot-d">▸</span>Identify <strong>covert channels</strong> such as DNS exfiltration</div>
+            </div>
+            <div class="cat-foot" style="border-top:1px solid rgba(6,214,160,0.12)">Tools: Wireshark · Volatility 3 · Autopsy · steghide · zsteg · exiftool</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 4 — REV METHODOLOGY ══ -->
+    <section class="slide" id="s4">
+      <div class="grid-bg"></div><div class="glow-tr"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--cyan)"></div>
+        <h2>Reverse Engineering — 4-Phase Methodology</h2>
+        <span class="hdr-sub" style="color:var(--cyan)">REV</span>
+      </div>
+      <div class="slide-body">
+        <div class="phases">
+          <div class="ph rv"><div class="ph-h"><div class="ph-n">01</div><div class="ph-t">Triage</div></div><div class="ph-b"><div class="phi"><span class="phi-c">file ./bin</span> — format &amp; arch</div><div class="phi"><span class="phi-c">strings</span> — hardcoded data</div><div class="phi"><span class="phi-c">binwalk -E</span> — entropy</div><div class="phi"><span class="phi-c">ldd ./bin</span> — linked libs</div><div class="phi phi-n">Goal: understand in &lt;5 min</div></div></div>
+          <div class="ph rv"><div class="ph-h"><div class="ph-n">02</div><div class="ph-t">Static Analysis</div></div><div class="ph-b"><div class="phi">Load in <span class="phi-c">Ghidra / IDA</span></div><div class="phi">Navigate to <span class="phi-c">main()</span></div><div class="phi">Rename vars + functions</div><div class="phi">Trace input → compare</div><div class="phi phi-n">Goal: understand the check</div></div></div>
+          <div class="ph rv"><div class="ph-h"><div class="ph-n">03</div><div class="ph-t">Dynamic Analysis</div></div><div class="ph-b"><div class="phi"><span class="phi-c">GDB + GEF</span> breakpoints</div><div class="phi"><span class="phi-c">break strcmp</span>; inspect regs</div><div class="phi"><span class="phi-c">x/s $rdi / $rsi</span></div><div class="phi"><span class="phi-c">ltrace / strace</span></div><div class="phi phi-n">Goal: see runtime values</div></div></div>
+          <div class="ph rv"><div class="ph-h"><div class="ph-n">04</div><div class="ph-t">Reconstruct</div></div><div class="ph-b"><div class="phi">Python — invert algorithm</div><div class="phi"><span class="phi-c">angr</span> — symbolic exec</div><div class="phi"><span class="phi-c">Z3</span> — constraint solver</div><div class="phi">Verify → test → submit</div><div class="phi phi-n">Goal: recover the flag</div></div></div>
+        </div>
+        <div class="tip rv"><span>🧭 Core Principle:</span> Always work <strong>backwards from the success condition</strong> — find what the binary accepts, then reverse-engineer the path to produce that exact input.</div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 5 — REV TOOLS ══ -->
+    <section class="slide" id="s5">
+      <div class="grid-bg"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--cyan)"></div>
+        <h2>Reverse Engineering — Tools Arsenal</h2>
+        <span class="hdr-sub" style="color:var(--cyan)">REV</span>
+      </div>
+      <div class="slide-body">
+        <div class="tgrid">
+          <div class="tc tc-cy rv"><div class="t-name">Ghidra</div><div class="t-cat">Decompiler / Disassembler</div><div class="t-desc">NSA's open-source RE framework. Decompiles to C pseudocode, supports 50+ architectures, Java/Python scripting API. Free.</div></div>
+          <div class="tc tc-cy rv"><div class="t-name">IDA Pro</div><div class="t-cat">Disassembler</div><div class="t-desc">Industry gold standard. Hex-Rays decompiler. Best for complex obfuscated binaries. Commercial but ubiquitous in professional work.</div></div>
+          <div class="tc tc-tl rv"><div class="t-name">GDB + GEF</div><div class="t-cat">Debugger</div><div class="t-desc">GNU Debugger with GDB Enhanced Features plugin. Heap visualisation, colour output, ROP helpers, De Bruijn pattern analysis.</div></div>
+          <div class="tc tc-tl rv"><div class="t-name">radare2</div><div class="t-cat">Analysis Suite</div><div class="t-desc">Powerful CLI framework (r2) with Cutter GUI frontend. Fully free and open-source. Extensive scripting and automation support.</div></div>
+          <div class="tc tc-pu rv"><div class="t-name">angr</div><div class="t-cat">Symbolic Execution</div><div class="t-desc">Python framework for automated binary analysis. Explores execution paths symbolically and solves for inputs that reach a target state.</div></div>
+          <div class="tc tc-pu rv"><div class="t-name">Z3</div><div class="t-cat">SMT Solver</div><div class="t-desc">Microsoft's SMT solver. Directly solves mathematical constraints to recover flag characters without brute force. Used with angr or standalone.</div></div>
+          <div class="tc tc-am rv"><div class="t-name">ltrace / strace</div><div class="t-cat">Dynamic Tracing</div><div class="t-desc">Trace library calls (ltrace) and system calls (strace) at runtime. Invaluable for rapid triage and understanding I/O behaviour instantly.</div></div>
+          <div class="tc tc-mt rv"><div class="t-name">binwalk</div><div class="t-cat">Firmware Analysis</div><div class="t-desc">Detect and extract embedded files, compressed sections, and encrypted regions. Entropy analysis identifies packed or encrypted code.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 6 — REV EXAMPLE ══ -->
+    <section class="slide" id="s6">
+      <div class="grid-bg"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--cyan)"></div>
+        <h2>REV Example — "SecureVault" &nbsp;<span class="tag tag-cyan" style="font-size:9px">250 pts</span></h2>
+        <span class="hdr-sub" style="color:var(--cyan)">Worked Example</span>
+      </div>
+      <div class="slide-body" style="padding-top:22px">
+        <div class="ex-grid">
+          <div class="ex rv"><div class="ex-h"><div class="ex-n">1</div><div class="ex-title">File Triage</div></div><div class="ex-b"><span class="c-comment"># Initial identification</span><br><span class="c-cmd">$ file ./securevault</span><br><span class="c-out">ELF 64-bit, dynamically linked</span><br><br><span class="c-cmd">$ strings ./sv | grep -iE 'flag|grant'</span><br><span class="c-out">Access Granted! Flag: %s</span><br><span class="c-out">Wrong code. Try again.</span><br><br><span class="c-comment"># Flag computed at runtime</span><br><span class="c-comment"># → must reverse the check</span></div></div>
+          <div class="ex rv"><div class="ex-h"><div class="ex-n">2</div><div class="ex-title">Ghidra Decompile</div></div><div class="ex-b"><span class="c-comment">// validate_code() — renamed</span><br><span class="c-kw">int</span> <span class="c-cmd">validate_code</span>(<span class="c-kw">char</span> *input) {<br>&nbsp;&nbsp;<span class="c-kw">char</span> key = <span class="c-str">0x37</span>;<br>&nbsp;&nbsp;<span class="c-kw">char</span> enc[] = { <span class="c-str">0x52,0x44,</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-str">0x49,0x4d...</span> };<br>&nbsp;&nbsp;<span class="c-kw">for</span> (i=0; i&lt;8; i++)<br>&nbsp;&nbsp;&nbsp;&nbsp;expected[i] = enc[i] ^ key;<br>&nbsp;&nbsp;<span class="c-kw">return</span> strcmp(input, expected);<br>}</div></div>
+          <div class="ex rv"><div class="ex-h"><div class="ex-n">3</div><div class="ex-title">Python Solve Script</div></div><div class="ex-b"><span class="c-comment">#!/usr/bin/env python3</span><br><span class="c-comment"># XOR is self-inverse</span><br><br><span class="c-kw">encoded</span> = [<span class="c-str">0x52,0x44,0x49,</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-str">0x4d,0x4e,0x55,</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-str">0x4e,0x46</span>]<br><span class="c-kw">key</span> = <span class="c-str">0x37</span><br><br>secret = <span class="c-str">''</span>.join(<br>&nbsp;&nbsp;chr(b ^ key) <span class="c-kw">for</span> b <span class="c-kw">in</span> encoded)<br><br><span class="c-cmd">print</span>(secret) <span class="c-comment"># → 'epicctf1'</span></div></div>
+          <div class="ex rv"><div class="ex-h"><div class="ex-n" style="background:rgba(74,222,128,0.18);color:var(--code-green)">✓</div><div class="ex-title">Flag Captured</div></div><div class="ex-b"><span class="c-cmd">$ ./securevault</span><br><span class="c-out">Enter the secret code: </span><span class="c-str">epicctf1</span><br><br><span style="color:var(--code-green)">Access Granted!</span><br><br><span class="c-flag">flag{x0r_15_n0t_</span><br><span class="c-flag">&nbsp;&nbsp;&nbsp;3ncrypt10n_l0l}</span><br><br><span class="c-comment">⏱ Solve time: ~20 min</span><br><span class="c-comment">📌 XOR is not encryption</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 7 — DFIR ARTEFACTS ══ -->
+    <section class="slide" id="s7">
+      <div class="grid-bg"></div><div class="glow-bl"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--mint)"></div>
+        <h2>Digital Forensics — Artefact Types &amp; Triage</h2>
+        <span class="hdr-sub" style="color:var(--mint)">DFIR</span>
+      </div>
+      <div class="slide-body">
+        <div class="artgrid">
+          <div class="art art-pcap rv"><div class="art-hd"><div class="art-icon">📡</div><div class="art-name">Network PCAP</div></div><div class="art-bd"><div class="art-ext">.pcap .pcapng</div><div class="art-tools">Wireshark, tshark, NetworkMiner, Zeek</div><div class="art-q">What was transmitted? Credentials? Files?</div></div></div>
+          <div class="art art-disk rv"><div class="art-hd"><div class="art-icon">💾</div><div class="art-name">Disk Image</div></div><div class="art-bd"><div class="art-ext">.img .dd .E01 .vmdk</div><div class="art-tools">Autopsy, Sleuth Kit, FTK Imager, photorec</div><div class="art-q">What exists? Deleted? Alternate Data Streams?</div></div></div>
+          <div class="art art-mem rv"><div class="art-hd"><div class="art-icon">🧠</div><div class="art-name">Memory Dump</div></div><div class="art-bd"><div class="art-ext">.raw .mem .vmem .dmp</div><div class="art-tools">Volatility 3, strings, Rekall</div><div class="art-q">Processes? Commands? Keys in RAM?</div></div></div>
+          <div class="art art-steg rv"><div class="art-hd"><div class="art-icon">🖼️</div><div class="art-name">Stego / Media</div></div><div class="art-bd"><div class="art-ext">.jpg .png .bmp .wav</div><div class="art-tools">steghide, zsteg, stegsolve, Audacity</div><div class="art-q">LSB planes? Metadata? Appended data?</div></div></div>
+          <div class="art art-log rv"><div class="art-hd"><div class="art-icon">📋</div><div class="art-name">Log Files</div></div><div class="art-bd"><div class="art-ext">.log .txt .csv .json</div><div class="art-tools">grep, awk, sed, Splunk, ELK</div><div class="art-q">Timeline anomalies? Encoded entries?</div></div></div>
+        </div>
+        <div class="triage-row rv">
+          <div class="tr-step"><div class="tr-n">1</div><div class="tr-t"><code style="color:var(--code-green)">file</code> + <code style="color:var(--code-green)">exiftool</code><br>Identify type, read all metadata</div></div>
+          <div class="tr-step"><div class="tr-n">2</div><div class="tr-t"><code style="color:var(--code-green)">binwalk</code> + <code style="color:var(--code-green)">strings</code><br>Detect embedded data, grep for flags</div></div>
+          <div class="tr-step"><div class="tr-n">3</div><div class="tr-t">Re-read challenge brief<br>Authors embed precise hints</div></div>
+          <div class="tr-step"><div class="tr-n">4</div><div class="tr-t">Form 2–3 hypotheses<br>before specialist tools</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 8 — NETWORK FORENSICS ══ -->
+    <section class="slide" id="s8">
+      <div class="grid-bg"></div><div class="glow-tr"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--mint)"></div>
+        <h2>Digital Forensics — Network PCAP Analysis</h2>
+        <span class="hdr-sub" style="color:var(--mint)">DFIR · PCAP</span>
+      </div>
+      <div class="slide-body">
+        <div class="net-grid">
+          <div class="wf-col">
+            <div class="wf rv"><div class="wf-n">1</div><div><div class="wf-title">Assess Protocol Mix</div><div class="wf-desc">Statistics → Protocol Hierarchy shows composition</div><div class="wf-cmd">tshark -r cap.pcap -qz io,phs</div></div></div>
+            <div class="wf rv"><div class="wf-n">2</div><div><div class="wf-title">Apply Display Filters</div><div class="wf-desc">Isolate relevant protocol traffic before inspection</div><div class="wf-cmd">http.request.method == "POST"</div></div></div>
+            <div class="wf rv"><div class="wf-n">3</div><div><div class="wf-title">Follow Streams</div><div class="wf-desc">Reconstruct full TCP/HTTP conversations as text</div><div class="wf-cmd">tshark -z follow,tcp,ascii,0 -q</div></div></div>
+            <div class="wf rv"><div class="wf-n">4</div><div><div class="wf-title">Export Objects</div><div class="wf-desc">File → Export Objects → HTTP/SMB/FTP/TFTP</div><div class="wf-cmd">--export-objects http,./out/</div></div></div>
+            <div class="wf rv"><div class="wf-n">5</div><div><div class="wf-title">Check DNS Exfiltration</div><div class="wf-desc">Encoded subdomains signal covert data transfer</div><div class="wf-cmd">-Y dns -T fields -e dns.qry.name | sort</div></div></div>
+          </div>
+          <div class="code-pan rv">
+            <div class="cp-h">● tshark cheatsheet</div>
+            <div class="cp-b">
+              <span style="color:var(--gray-3)"># Protocol breakdown</span><br>
+              <span style="color:var(--code-green)">tshark -r cap.pcap -qz io,phs</span><br><br>
+              <span style="color:var(--gray-3)"># Export HTTP objects</span><br>
+              <span style="color:var(--code-green)">tshark -r cap.pcap --export-objects http,./out/</span><br><br>
+              <span style="color:var(--gray-3)"># Follow TCP stream 0</span><br>
+              <span style="color:var(--code-green)">tshark -r cap.pcap -z follow,tcp,ascii,0 -q</span><br><br>
+              <span style="color:var(--gray-3)"># DNS query names (exfil detection)</span><br>
+              <span style="color:var(--code-green)">tshark -r cap.pcap -Y dns \</span><br>
+              <span style="color:var(--code-green)">&nbsp;&nbsp;-T fields -e dns.qry.name | sort | uniq</span><br><br>
+              <span style="color:var(--gray-3)"># HTTP POST data extraction</span><br>
+              <span style="color:var(--code-green)">tshark -r cap.pcap \</span><br>
+              <span style="color:var(--code-green)">&nbsp;&nbsp;-Y 'http.request.method==POST' \</span><br>
+              <span style="color:var(--code-green)">&nbsp;&nbsp;-T fields -e http.file_data</span><br><br>
+              <span style="color:var(--gray-3)"># FTP credentials</span><br>
+              <span style="color:var(--code-green)">tshark -r cap.pcap -Y ftp \</span><br>
+              <span style="color:var(--code-green)">&nbsp;&nbsp;-T fields -e ftp.request.arg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 9 — DISK / MEMORY / STEGO ══ -->
+    <section class="slide" id="s9">
+      <div class="grid-bg"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--mint)"></div>
+        <h2>Digital Forensics — Disk · Memory · Steganography</h2>
+        <span class="hdr-sub" style="color:var(--mint)">DFIR</span>
+      </div>
+      <div class="slide-body">
+        <div class="tri">
+          <div class="col col-disk rv">
+            <div class="col-h"><span class="col-ico">💾</span><div class="col-title">Disk Image</div></div>
+            <div class="col-b">
+              <span style="color:var(--gray-3)"># Identify partitions</span><br>
+              <span style="color:var(--code-blue)">fdisk -l image.img</span><br>
+              <span style="color:var(--code-blue)">mmls image.img</span><br><br>
+              <span style="color:var(--gray-3)"># Mount read-only</span><br>
+              <span style="color:var(--code-blue)">sudo losetup -f --show img</span><br>
+              <span style="color:var(--code-blue)">sudo mount /dev/loop0p1 /mnt -o ro</span><br><br>
+              <span style="color:var(--gray-3)"># List all + deleted files</span><br>
+              <span style="color:var(--code-blue)">fls -r -d image.img</span><br><br>
+              <span style="color:var(--gray-3)"># Recover by inode number</span><br>
+              <span style="color:var(--code-blue)">icat image.img 42 &gt; recovered_file</span><br><br>
+              <span style="color:var(--gray-3)"># Carve by file signature</span><br>
+              <span style="color:var(--code-blue)">photorec image.img</span><br>
+              <span style="color:var(--code-blue)">foremost -i image.img -o ./out/</span>
+            </div>
+          </div>
+          <div class="col col-mem rv">
+            <div class="col-h"><span class="col-ico">🧠</span><div class="col-title">Memory Dump</div></div>
+            <div class="col-b">
+              <span style="color:var(--gray-3)"># Volatility 3 core commands</span><br>
+              <span style="color:var(--code-green)">vol -f mem.raw windows.info</span><br>
+              <span style="color:var(--code-green)">vol -f mem.raw windows.pstree</span><br>
+              <span style="color:var(--code-green)">vol -f mem.raw windows.cmdline</span><br>
+              <span style="color:var(--code-green)">vol -f mem.raw windows.cmdscan</span><br>
+              <span style="color:var(--code-green)">vol -f mem.raw windows.netscan</span><br>
+              <span style="color:var(--code-green)">vol -f mem.raw windows.filescan</span><br><br>
+              <span style="color:var(--gray-3)"># Dump a process by PID</span><br>
+              <span style="color:var(--code-green)">vol -f mem.raw windows.procdump \</span><br>
+              <span style="color:var(--code-green)">&nbsp;&nbsp;--pid 1234 --dump-dir ./dumps/</span><br><br>
+              <span style="color:var(--gray-3)"># String search in process memory</span><br>
+              <span style="color:var(--code-green)">strings proc.dmp | grep -i flag</span>
+            </div>
+          </div>
+          <div class="col col-steg rv">
+            <div class="col-h"><span class="col-ico">🖼️</span><div class="col-title">Steganography</div></div>
+            <div class="col-b">
+              <span style="color:var(--gray-3)"># Always-run checklist first</span><br>
+              <span style="color:var(--code-pink)">exiftool image.jpg</span><br>
+              <span style="color:var(--code-pink)">binwalk -e image.png</span><br>
+              <span style="color:var(--code-pink)">strings image.jpg | grep flag</span><br><br>
+              <span style="color:var(--gray-3)"># steghide (try blank passphrase)</span><br>
+              <span style="color:var(--code-pink)">steghide extract -sf img.jpg -p ''</span><br><br>
+              <span style="color:var(--gray-3)"># LSB analysis — PNG/BMP</span><br>
+              <span style="color:var(--code-pink)">zsteg -a image.png</span><br><br>
+              <span style="color:var(--gray-3)"># Check for appended data</span><br>
+              <span style="color:var(--code-pink)">xxd image.jpg | tail -10</span><br>
+              <span style="color:var(--gray-3)"># Look for PK header after FFD9</span><br><br>
+              <span style="color:var(--gray-3)"># Visual plane analysis</span><br>
+              <span style="color:var(--code-pink)">java -jar stegsolve.jar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 10 — DFIR EXAMPLE ══ -->
+    <section class="slide" id="s10">
+      <div class="grid-bg"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--mint)"></div>
+        <h2>DFIR Example — "LostPackets" &nbsp;<span class="tag tag-mint" style="font-size:9px">150 pts</span></h2>
+        <span class="hdr-sub" style="color:var(--mint)">Worked Example</span>
+      </div>
+      <div class="slide-body" style="padding-top:16px">
+        <div class="callout callout-amber rv" style="margin-bottom:13px"><strong>Challenge</strong>An employee was caught exfiltrating sensitive data. Network traffic was captured. Identify what was stolen. [Attachment: capture.pcap]</div>
+        <div class="ex-layout">
+          <div class="steps">
+            <div class="ist rv"><div class="ist-n">1</div><div><div class="ist-title">PCAP Triage</div><div class="ist-text">1,423 packets · 42s · Protocol split: 68% HTTP, 22% DNS, 10% TCP handshakes.</div><div class="ist-cmd">capinfos capture.pcap<br>tshark -r cap.pcap -qz io,phs</div></div></div>
+            <div class="ist rv"><div class="ist-n">2</div><div><div class="ist-title">HTTP Object Export</div><div class="ist-text">HTTP dominates → exporter reveals <code style="color:var(--amber);font-family:'Space Mono',monospace;font-size:10px">upload_20231102.b64</code></div><div class="ist-cmd">tshark -r cap.pcap --export-objects http,./out/</div></div></div>
+            <div class="ist rv"><div class="ist-n">3</div><div><div class="ist-title">Decode Payload</div><div class="ist-text">The .b64 extension immediately signals base64 encoding. Pipe directly to decoder.</div><div class="ist-cmd">cat upload.b64 | base64 -d</div></div></div>
+            <div class="ist rv"><div class="ist-n">4</div><div><div class="ist-title">DNS Due Diligence</div><div class="ist-text">Always check DNS for covert channels regardless of already having a flag.</div><div class="ist-cmd">tshark -Y dns -T fields -e dns.qry.name<br>→ No suspicious subdomains found ✓</div></div></div>
+          </div>
+          <div class="rcol">
+            <div class="code-block rv" style="font-size:10.5px"><span class="c-comment"># The extracted file content</span><br><span class="c-cmd">$ cat ./out/upload_20231102.b64</span><br><span class="c-out">ZmxhZ3twY2FwXzRuNGx5czFzX3IzdjM0bHNfNGxsfQ==</span><br><br><span class="c-comment"># Decode from base64</span><br><span class="c-cmd">$ cat upload_20231102.b64 | base64 -d</span></div>
+            <div class="flag-box rv"><div class="fl-label">🏁 &nbsp; Flag Captured &nbsp; 🏁</div><div class="fl-text">flag{pcap_4n4lys1s_r3v34ls_4ll}</div></div>
+            <div class="callout rv"><strong>Lesson Learned</strong>The .b64 extension was a hint hiding in plain sight. Read filenames carefully before opening tools. Always run a DNS exfiltration check even after finding a flag — thoroughness is a professional standard.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 11 — MINDSET ══ -->
+    <section class="slide" id="s11">
+      <div class="grid-bg"></div><div class="glow-tr"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:linear-gradient(180deg,var(--cyan),var(--amber))"></div>
+        <h2>The CTF Problem-Solving Mindset</h2>
+        <span class="hdr-sub">Metacognition</span>
+      </div>
+      <div class="slide-body">
+        <div class="pgrid">
+          <div class="pc pc1 rv"><span class="p-ico">🔍</span><div class="p-title">Adversarial Curiosity</div><div class="p-desc">Assume every system has a flaw. Your job is to find it. This mindset is the foundation of all security research, not just CTFs.</div></div>
+          <div class="pc pc2 rv"><span class="p-ico">🧪</span><div class="p-title">Hypothesis-Driven</div><div class="p-desc">Form explicit, testable theories before applying tools. "I think the flag is LSB-encoded" is testable. Random tool-clicking is not.</div></div>
+          <div class="pc pc3 rv"><span class="p-ico">📝</span><div class="p-title">Document Everything</div><div class="p-desc">Keep a live notepad throughout every challenge. The flag is often found by connecting observations made hours apart.</div></div>
+          <div class="pc pc4 rv"><span class="p-ico">⏱️</span><div class="p-title">Know When to Pivot</div><div class="p-desc">30 minutes with zero new information means change approach. Spending 4 hours on a 50pt challenge ignoring 400pt ones is a strategic error.</div></div>
+          <div class="pc pc5 rv"><span class="p-ico">🤝</span><div class="p-title">Collaborate Openly</div><div class="p-desc">Brief teammates when handing off. Explaining a problem aloud — even to yourself — frequently surfaces the solution instantly.</div></div>
+          <div class="pc pc6 rv"><span class="p-ico">🔄</span><div class="p-title">Iterate Relentlessly</div><div class="p-desc">Every failed attempt narrows the solution space. Failure is information. Record what failed before moving to the next hypothesis.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 12 — MISTAKES ══ -->
+    <section class="slide" id="s12">
+      <div class="grid-bg"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:var(--amber)"></div>
+        <h2>Common Mistakes &amp; How to Avoid Them</h2>
+        <span class="hdr-sub">Anti-Patterns</span>
+      </div>
+      <div class="slide-body" style="padding-top:24px">
+        <div class="mlist">
+          <div class="mrow rv"><div class="wrong"><span class="wx">✗</span>Ignoring file metadata and properties</div><div class="arr">→</div><div class="right"><span class="rck">✓</span>Always run <code>exiftool</code> + <code>binwalk</code> + <code>strings</code> before any specialist tool</div></div>
+          <div class="mrow rv"><div class="wrong"><span class="wx">✗</span>Not reading the challenge description carefully</div><div class="arr">→</div><div class="right"><span class="rck">✓</span>Re-read 3× before starting tools. "Deleted", "hidden", "recovered" are precise, intentional author hints</div></div>
+          <div class="mrow rv"><div class="wrong"><span class="wx">✗</span>Jumping to Volatility, angr, or Ghidra first</div><div class="arr">→</div><div class="right"><span class="rck">✓</span>Begin with <code>file</code>, <code>strings</code>, <code>exiftool</code>. Complex tools come after basic triage yields nothing</div></div>
+          <div class="mrow rv"><div class="wrong"><span class="wx">✗</span>Working alone in isolation for more than 30 minutes</div><div class="arr">→</div><div class="right"><span class="rck">✓</span>Explain the problem to a teammate or rubber-duck debug. Fresh perspective reliably unblocks progress</div></div>
+          <div class="mrow rv"><div class="wrong"><span class="wx">✗</span>Not documenting negative results and dead ends</div><div class="arr">→</div><div class="right"><span class="rck">✓</span>Record every failed attempt — it narrows the space and prevents repeating the same dead end under pressure</div></div>
+          <div class="mrow rv"><div class="wrong"><span class="wx">✗</span>Assuming a candidate string is already plaintext</div><div class="arr">→</div><div class="right"><span class="rck">✓</span>Flags may be base64, hex, reversed, compressed, or split. Always decode before dismissing any result</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 13 — RESOURCES ══ -->
+    <section class="slide" id="s13">
+      <div class="grid-bg"></div><div class="glow-bl"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:linear-gradient(180deg,var(--cyan),var(--mint))"></div>
+        <h2>Resources to Level Up</h2>
+        <span class="hdr-sub">Learning Paths</span>
+      </div>
+      <div class="slide-body">
+        <div class="rgrid">
+          <div class="rc rv"><div class="rc-h"><div class="rc-ico" style="background:rgba(34,211,238,0.14);color:var(--cyan)">🏁</div><div><div class="rc-name">picoCTF</div><div class="rc-cat">All Levels · Free</div></div></div><div class="rc-desc">Carnegie Mellon's beginner-friendly platform. Progressive challenges with guided learning paths. Best starting point for newcomers to CTF.</div><div class="rc-url" style="color:var(--cyan)">picoctf.org</div></div>
+          <div class="rc rv"><div class="rc-h"><div class="rc-ico" style="background:rgba(34,211,238,0.14);color:var(--cyan)">⚙️</div><div><div class="rc-name">pwn.college</div><div class="rc-cat">REV · Free · Structured</div></div></div><div class="rc-desc">Arizona State's structured course. Module-based RE with automated validation. Arguably the best free binary analysis training available.</div><div class="rc-url" style="color:var(--cyan)">pwn.college</div></div>
+          <div class="rc rv"><div class="rc-h"><div class="rc-ico" style="background:rgba(6,214,160,0.14);color:var(--mint)">🎯</div><div><div class="rc-name">HackTheBox</div><div class="rc-cat">All Levels · Industry Standard</div></div></div><div class="rc-desc">Lab environment with retiring machines and Pro Labs simulating enterprise networks. Active global CTF competitions with real challenge variety.</div><div class="rc-url" style="color:var(--mint)">hackthebox.com</div></div>
+          <div class="rc rv"><div class="rc-h"><div class="rc-ico" style="background:rgba(6,214,160,0.14);color:var(--mint)">📅</div><div><div class="rc-name">CTFtime</div><div class="rc-cat">Events · Global Calendar</div></div></div><div class="rc-desc">The global CTF event calendar and team ranking system. Browse upcoming competitions, join or create a team, and track your progress over time.</div><div class="rc-url" style="color:var(--mint)">ctftime.org</div></div>
+          <div class="rc rv"><div class="rc-h"><div class="rc-ico" style="background:rgba(245,158,11,0.14);color:var(--amber)">▶️</div><div><div class="rc-name">LiveOverflow</div><div class="rc-cat">Video · YouTube</div></div></div><div class="rc-desc">Deep technical CTF walkthrough videos. Essential for visual learners tackling REV and DFIR. Covers real competition challenges with full explanations.</div><div class="rc-url" style="color:var(--amber)">youtube.com/c/LiveOverflow</div></div>
+          <div class="rc rv"><div class="rc-h"><div class="rc-ico" style="background:rgba(245,158,11,0.14);color:var(--amber)">📚</div><div><div class="rc-name">Official Docs</div><div class="rc-cat">Ghidra · Volatility 3 · angr</div></div></div><div class="rc-desc">Official documentation for the three most important tools in this guide. Read the Ghidra CheatSheet and Volatility 3 plugin reference thoroughly.</div><div class="rc-url" style="color:var(--amber)">ghidra-sre.org · volatility3.readthedocs.io</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 14 — CONCLUSION ══ -->
+    <section class="slide" id="s14">
+      <div class="grid-bg"></div><div class="glow-tr"></div><div class="glow-bl"></div>
+      <div class="slide-header">
+        <div class="hdr-bar" style="background:linear-gradient(180deg,var(--cyan),var(--mint))"></div>
+        <h2>Conclusion</h2>
+        <span class="hdr-sub">Summary</span>
+      </div>
+      <div class="slide-body">
+        <div class="conc">
+          <div class="sum rv">CTF competitions are among the most effective hands-on training available for cybersecurity students — bridging the gap between academic theory and the <strong>adversarial thinking</strong> demanded by real-world security work. The skills built map directly to professional roles: penetration tester, malware analyst, forensics investigator, and security researcher.</div>
+          <div class="trow">
+            <div class="tk tk-rev rv">
+              <div class="tk-h"><span class="tk-ico">⚙️</span><div class="tk-title">Reverse Engineering</div></div>
+              <div class="tk-pts">
+                <div class="tkp"><span class="tkdot">▸</span>Work backwards from the success condition</div>
+                <div class="tkp"><span class="tkdot">▸</span>Master Ghidra + GDB as core daily drivers</div>
+                <div class="tkp"><span class="tkdot">▸</span>Add angr and Z3 for constraint-based challenges</div>
+                <div class="tkp"><span class="tkdot">▸</span>Every binary is a puzzle with a deterministic answer</div>
+              </div>
+            </div>
+            <div class="tk tk-dfir rv">
+              <div class="tk-h"><span class="tk-ico">🔍</span><div class="tk-title">Digital Forensics</div></div>
+              <div class="tk-pts">
+                <div class="tkp"><span class="tkdot">▸</span>Always triage with exiftool + binwalk first</div>
+                <div class="tkp"><span class="tkdot">▸</span>Form explicit hypotheses before reaching for tools</div>
+                <div class="tkp"><span class="tkdot">▸</span>Flags hide in metadata, LSB, appended data, streams</div>
+                <div class="tkp"><span class="tkdot">▸</span>Document every finding — negatives matter too</div>
+              </div>
+            </div>
+          </div>
+          <div class="qbar rv">"The quieter you become, the more you are able to hear." — BackTrack Linux</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SLIDE 15 — Q&A ══ -->
+    <section class="slide" id="s15">
+      <div class="grid-bg"></div>
+      <div class="tbg" id="tbg"></div>
+      <div class="qa-wrap">
+        <div class="flag-disp rv"><div class="fd-label">session complete</div><div class="fd-text">flag{th4nk_y0u_f0r_l1st3n1ng}</div></div>
+        <div class="qa-title rv">QUESTIONS?</div>
+        <div class="qa-cats rv">
+          <span class="qa-cat" style="color:var(--cyan)">Reverse Engineering</span>
+          <span class="qa-div">·</span>
+          <span class="qa-cat" style="color:var(--mint)">Digital Forensics</span>
+        </div>
+        <div class="qa-info rv">github.com/[your-handle]/ctf-writeups &nbsp;·&nbsp; ctftime.org &nbsp;·&nbsp; picoctf.org</div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div id="controls">
+  <button class="cbtn" id="bprev">&#8592;</button>
+  <span id="scounter">01 / 15</span>
+  <button class="cbtn" id="bnext">&#8594;</button>
+</div>
+
+<script>
+const slides = Array.from(document.querySelectorAll('.slide'));
+const TOTAL = slides.length;
+let cur = 0, animating = false;
+
+function goTo(idx, dir=1) {
+  if (animating || idx === cur || idx < 0 || idx >= TOTAL) return;
+  animating = true;
+  const out = slides[cur], inn = slides[idx];
+  slides.forEach(s => s.classList.remove('entering','exiting','entering-back','exiting-back','active'));
+  out.classList.add('active');
+  inn.classList.add('active');
+  if (dir > 0) { out.classList.add('exiting'); inn.classList.add('entering'); }
+  else         { out.classList.add('exiting-back'); inn.classList.add('entering-back'); }
+  // reset reveals
+  inn.querySelectorAll('.rv').forEach(el => { el.style.animation='none'; el.offsetHeight; el.style.animation=''; });
+  setTimeout(() => {
+    out.classList.remove('active','exiting','exiting-back');
+    inn.classList.remove('entering','entering-back');
+    cur = idx; updateUI(); animating = false;
+  }, 520);
+}
+
+function next() { goTo(cur+1,1); }
+function prev() { goTo(cur-1,-1); }
+
+function updateUI() {
+  const n = String(cur+1).padStart(2,'0'), t = String(TOTAL).padStart(2,'0');
+  document.getElementById('scounter').textContent = `${n} / ${t}`;
+  document.getElementById('snbadge').textContent  = `${n} / ${t}`;
+  document.getElementById('prog').style.width = `${((cur+1)/TOTAL)*100}%`;
+}
+
+document.getElementById('bnext').addEventListener('click', next);
+document.getElementById('bprev').addEventListener('click', prev);
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ') { e.preventDefault(); next(); }
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')  { e.preventDefault(); prev(); }
+  if (e.key==='f'||e.key==='F') { !document.fullscreenElement ? document.documentElement.requestFullscreen() : document.exitFullscreen(); }
+  if (e.key==='Home') goTo(0,-1);
+  if (e.key==='End')  goTo(TOTAL-1,1);
+});
+
+let tx=0;
+document.addEventListener('touchstart', e=>{ tx=e.touches[0].clientX; });
+document.addEventListener('touchend',   e=>{ const d=e.changedTouches[0].clientX-tx; if(d<-50)next(); if(d>50)prev(); });
+
+function scale() {
+  const vp = document.getElementById('viewport');
+  vp.style.transform = `scale(${Math.min(window.innerWidth/1280, window.innerHeight/720)*0.97})`;
+}
+scale();
+window.addEventListener('resize', scale);
+
+// Slide 15 terminal bg
+const tlines = [
+  '$ file ./challenge  →  ELF 64-bit LSB executable, x86-64, dynamically linked',
+  '$ strings ./challenge | grep -iE "flag|correct"  →  Access Granted! Flag: %s',
+  '$ vol -f memory.raw windows.pstree  →  malware.exe (PID 4821)  ← suspicious',
+  '$ tshark -r capture.pcap --export-objects http,./out/  →  3 files extracted',
+  '$ steghide extract -sf image.jpg -p ""  →  wrote data to "flag.txt"',
+  '$ python3 solve.py  →  [+] Key decoded: epicctf1  →  flag{x0r_15_n0t...}',
+  '$ cat /mnt/disk/.hidden/.flag.txt  →  flag{d3l3t3d_but_n0t_g0n3}',
+  '$ zsteg -a image.png  →  b1,rgb,lsb,xy :: text: "flag{lsb_st3g0}"',
+];
+document.getElementById('tbg').textContent = Array(10).fill(tlines).flat().join('\n');
+
+updateUI();
+// Trigger first slide reveals
+setTimeout(()=>{
+  slides[0].querySelectorAll('.rv').forEach(el=>{ el.style.animation='none'; el.offsetHeight; el.style.animation=''; });
+},60);
+</script>
+</body>
+</html>
